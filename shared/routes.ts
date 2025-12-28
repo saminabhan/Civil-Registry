@@ -74,6 +74,13 @@ export const api = {
     },
   },
   citizens: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/citizens',
+      responses: {
+        200: z.array(z.custom<typeof citizens.$inferSelect>()),
+      },
+    },
     search: {
       method: 'GET' as const,
       path: '/api/citizens/search',

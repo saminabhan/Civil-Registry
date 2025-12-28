@@ -1,36 +1,34 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl, type InsertCitizen } from "@shared/routes";
+import axiosInstance from "@/lib/axios";
 
 const API_BASE_URL = "http://127.0.0.1:8000";
+
+export function useGetCitizens() {
+  return useQuery({
+    queryKey: [api.citizens.list.path],
+    queryFn: async () => {
+      const response = await axiosInstance.get(api.citizens.list.path);
+      return api.citizens.list.responses[200].parse(response.data);
+    },
+  });
+}
 
 export function useSearchCitizens(params?: Record<string, any>) {
   // Only search if at least one param has a value
   const isEnabled = params && Object.values(params).some(val => val && String(val).trim().length > 0);
-  
-  // Construct URL with query params
-  const url = isEnabled 
-    ? `${API_BASE_URL}${api.citizens.search.path}?${new URLSearchParams(params).toString()}`
-    : null;
 
   return useQuery({
     queryKey: [api.citizens.search.path, params],
     queryFn: async () => {
-      if (!url) return [];
+      if (!isEnabled) return [];
       
-      const token = localStorage.getItem("token");
-      const headers: HeadersInit = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-      
-      const res = await fetch(url, { 
-        headers,
-        credentials: "include" 
+      const response = await axiosInstance.get(api.citizens.search.path, {
+        params: params
       });
-      if (!res.ok) throw new Error("فشل البحث");
-      return api.citizens.search.responses[200].parse(await res.json());
+      return api.citizens.search.responses[200].parse(response.data);
     },
-    enabled: !!url,
+    enabled: !!isEnabled,
   });
 }
 
