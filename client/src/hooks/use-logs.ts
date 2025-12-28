@@ -4,7 +4,7 @@ import apiClient from "@/lib/axios";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+const API_BASE_URL = "http://127.0.0.1:8000/api";
 
 export function useLogs(page: number = 1) {
   return useQuery({
@@ -62,7 +62,7 @@ export function useUsersWithLogCounts() {
         headers.Authorization = `Bearer ${token}`;
       }
       
-      const res = await fetch(`${API_BASE_URL}/api/logs/users`, { 
+      const res = await fetch(`${API_BASE_URL}/logs/users`, { 
         headers,
         credentials: "include" 
       });
@@ -84,7 +84,7 @@ export function useUserLogs(userId: number | null, page: number = 1) {
         headers.Authorization = `Bearer ${token}`;
       }
       
-      const res = await fetch(`${API_BASE_URL}/api/logs/user/${userId}?page=${page}`, { 
+      const res = await fetch(`${API_BASE_URL}/logs/user/${userId}?page=${page}`, { 
         headers,
         credentials: "include" 
       });
@@ -114,7 +114,7 @@ export function useUserRecentSearches(userId: number | null) {
         headers.Authorization = `Bearer ${token}`;
       }
       
-      const res = await fetch(`${API_BASE_URL}/api/logs/user/${userId}/searches`, { 
+      const res = await fetch(`${API_BASE_URL}/logs/user/${userId}/searches`, { 
         headers,
         credentials: "include" 
       });
@@ -135,7 +135,7 @@ export function useRecentSearches() {
         headers.Authorization = `Bearer ${token}`;
       }
       
-      const res = await fetch(`${API_BASE_URL}/api/logs/recent-searches`, { 
+      const res = await fetch(`${API_BASE_URL}/logs/recent-searches`, { 
         headers,
         credentials: "include" 
       });

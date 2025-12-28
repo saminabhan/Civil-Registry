@@ -25,7 +25,6 @@ class AuthController extends Controller
             ], 401);
         }
 
-        // Check if user account is active
         if (! $user->is_active) {
             return response()->json([
                 'message' => 'الحساب معطل. يرجى الاتصال بالمسؤول لتفعيل الحساب.'
@@ -34,14 +33,12 @@ class AuthController extends Controller
 
         $token = $user->createToken('api-token')->plainTextToken;
 
-        // Log login action
         AuditLog::create([
             'user_id' => $user->id,
             'action' => 'LOGIN',
             'details' => "User {$user->username} logged in",
         ]);
 
-        // Transform user to camelCase for frontend compatibility
         $userData = [
             'id' => $user->id,
             'username' => $user->username,
@@ -61,7 +58,6 @@ class AuthController extends Controller
     {
         $user = $request->user();
         
-        // Log logout action before deleting token
         if ($user) {
             AuditLog::create([
                 'user_id' => $user->id,

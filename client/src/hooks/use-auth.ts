@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type LoginRequest } from "@shared/routes";
 import { useLocation } from "wouter";
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+const API_BASE_URL = "http://127.0.0.1:8000/api";
 
 export function useAuth() {
   const queryClient = useQueryClient();

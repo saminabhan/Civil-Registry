@@ -18,7 +18,6 @@ class UserController extends Controller
         
         $paginated = User::orderBy('id', 'desc')->paginate($perPage, ['*'], 'page', $page);
         
-        // Transform users to camelCase for frontend compatibility
         $data = $paginated->map(function ($user) {
             return [
                 'id' => $user->id,
@@ -61,17 +60,17 @@ class UserController extends Controller
             'password' => 'required|string|min:6',
             'is_admin' => 'boolean',
             'is_active' => 'boolean',
-            'isAdmin' => 'boolean', // Accept camelCase as well
-            'isActive' => 'boolean', // Accept camelCase as well
+            'isAdmin' => 'boolean',
+            'isActive' => 'boolean',
         ]);
 
         $data['password'] = Hash::make($data['password']);
 
-        // Handle both snake_case and camelCase
+
         $isAdmin = $data['is_admin'] ?? $data['isAdmin'] ?? false;
         $isActive = $data['is_active'] ?? $data['isActive'] ?? true;
         
-        // Use username as name if name is not provided
+
         $name = $data['name'] ?? $data['username'];
 
         $user = User::create([
@@ -82,7 +81,7 @@ class UserController extends Controller
             'is_active' => $isActive,
         ]);
 
-        // Log user creation
+
         $currentUser = $request->user();
         if ($currentUser) {
             AuditLog::create([
@@ -92,7 +91,6 @@ class UserController extends Controller
             ]);
         }
 
-        // Transform user to camelCase for frontend compatibility
         $userData = [
             'id' => $user->id,
             'username' => $user->username,
@@ -113,7 +111,6 @@ class UserController extends Controller
 
         $user = User::findOrFail($id);
         
-        // Prevent modification of System Admin (ID = 1)
         if ($user->id === 1) {
             return response()->json([
                 'message' => 'لا يمكن تعديل حساب System Admin'
@@ -124,7 +121,6 @@ class UserController extends Controller
         $user->is_active = $request->isActive;
         $user->save();
 
-        // Log status change
         $currentUser = $request->user();
         if ($currentUser) {
             $statusText = $request->isActive ? 'active' : 'inactive';
@@ -135,7 +131,6 @@ class UserController extends Controller
             ]);
         }
 
-        // Transform user to camelCase for frontend compatibility
         $userData = [
             'id' => $user->id,
             'username' => $user->username,

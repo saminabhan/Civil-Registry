@@ -1,16 +1,32 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchCitizens, useCreateCitizen } from "@/hooks/use-citizens";
 import { useAuth } from "@/hooks/use-auth";
-import { Search, Loader2, UserPlus, Info } from "lucide-react";
+import { Search, Loader2, UserPlus, Info, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<'name' | 'id'>('name');
   const [searchParams, setSearchParams] = useState<any>({});
   const [triggerSearch, setTriggerSearch] = useState(false);
+  const { toast } = useToast();
   
-  const { data: results, isLoading } = useSearchCitizens(triggerSearch ? searchParams : null);
+  const { data: searchResult, isLoading, error } = useSearchCitizens(triggerSearch ? searchParams : null);
+  const results = searchResult?.citizens || [];
+  const resultCount = searchResult?.count || 0;
+  const resultMessage = searchResult?.message || "";
+  
+  // Show error toast if there's an error
+  useEffect(() => {
+    if (error && triggerSearch) {
+      toast({
+        variant: "destructive",
+        title: "خطأ في البحث",
+        description: error instanceof Error ? error.message : "حدث خطأ أثناء البحث",
+      });
+    }
+  }, [error, triggerSearch, toast]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,17 +34,38 @@ export default function Dashboard() {
     const params: any = {};
     
     if (activeTab === 'name') {
-      params.firstName = formData.get('firstName');
-      params.fatherName = formData.get('fatherName');
-      params.grandfatherName = formData.get('grandfatherName');
-      params.lastName = formData.get('lastName');
+      const firstName = formData.get('firstName')?.toString().trim();
+      const lastName = formData.get('lastName')?.toString().trim();
+      
+      // Validate that firstName and lastName are provided
+      if (!firstName || !lastName) {
+        toast({
+          variant: "destructive",
+          title: "خطأ في الإدخال",
+          description: "الرجاء إدخال الاسم الأول واسم العائلة على الأقل",
+        });
+        return;
+      }
+      
+      params.firstName = firstName;
+      params.lastName = lastName;
+      params.fatherName = formData.get('fatherName')?.toString().trim();
+      params.grandfatherName = formData.get('grandfatherName')?.toString().trim();
     } else {
-      params.nationalId = formData.get('nationalId');
+      const nationalId = formData.get('nationalId')?.toString().trim();
+      if (!nationalId) {
+        toast({
+          variant: "destructive",
+          title: "خطأ في الإدخال",
+          description: "الرجاء إدخال رقم الهوية",
+        });
+        return;
+      }
+      params.nationalId = nationalId;
     }
 
     setSearchParams(params);
     setTriggerSearch(true);
-    // Note: Search logging is now handled automatically by the backend
   };
 
   return (
@@ -111,50 +148,112 @@ export default function Dashboard() {
             <Loader2 className="w-10 h-10 animate-spin mb-4 text-primary" />
             <p>جاري البحث...</p>
           </div>
-        ) : triggerSearch && results?.length === 0 ? (
+        ) : error ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-destructive/10 border-2 border-destructive/30 rounded-2xl p-8"
+          >
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-destructive/20 flex items-center justify-center mb-4">
+                <AlertCircle className="w-8 h-8 text-destructive" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-2">حدث خطأ أثناء البحث</h3>
+              <p className="text-muted-foreground text-sm max-w-md">
+                {error instanceof Error ? error.message : "حدث خطأ غير متوقع أثناء البحث. يرجى المحاولة مرة أخرى."}
+              </p>
+            </div>
+          </motion.div>
+        ) : triggerSearch && results.length === 0 ? (
           <div className="text-center py-20 bg-muted/30 rounded-2xl border border-dashed border-border">
             <Info className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-bold text-foreground">لا توجد نتائج</h3>
-            <p className="text-muted-foreground">لم يتم العثور على سجلات مطابقة لمعايير البحث</p>
+            <p className="text-muted-foreground">{resultMessage || "لم يتم العثور على سجلات مطابقة لمعايير البحث"}</p>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4">
-            {results?.map((citizen) => (
-              <motion.div
-                key={citizen.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row md:items-center justify-between gap-6"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-2xl border border-primary/20">
-                    {citizen.firstName.charAt(0)}
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-foreground">
-                      {citizen.firstName} {citizen.fatherName} {citizen.grandfatherName} {citizen.lastName}
-                    </h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-sm font-medium bg-muted px-2 py-0.5 rounded text-muted-foreground">
-                        {citizen.nationalId}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        {citizen.gender === 'male' ? 'ذكر' : 'أنثى'} • {new Date(citizen.dob!).toLocaleDateString('ar-SA')}
-                      </span>
+        ) : triggerSearch && results.length > 0 ? (
+          <>
+            <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 flex items-center justify-between">
+              <p className="text-sm font-medium text-foreground">
+                {resultMessage || `تم العثور على ${resultCount} مواطن`}
+              </p>
+              <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
+                {resultCount} نتيجة
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-4">
+              {results.map((citizen: any) => (
+                <motion.div
+                  key={citizen.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Main Info - Left Column */}
+                    <div className="flex items-start gap-4">
+                      <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl border border-primary/20 flex-shrink-0">
+                        {citizen.firstName?.charAt(0) || '?'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-bold text-foreground mb-2 leading-tight">
+                          {citizen.fullName || `${citizen.firstName} ${citizen.fatherName} ${citizen.grandfatherName} ${citizen.lastName}`}
+                        </h3>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs font-medium bg-muted px-2.5 py-1 rounded-full text-foreground">
+                            {citizen.nationalId}
+                          </span>
+                          <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">
+                            {citizen.genderText || (citizen.gender === 'male' ? 'ذكر' : 'أنثى')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Middle Column - Personal Info */}
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-3">
+                        {citizen.age && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">العمر</p>
+                            <p className="font-medium text-sm">{citizen.age} سنة</p>
+                          </div>
+                        )}
+                        {citizen.dobText && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">تاريخ الميلاد</p>
+                            <p className="font-medium text-sm">{citizen.dobText}</p>
+                          </div>
+                        )}
+                        {citizen.socialStatus && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">الحالة الاجتماعية</p>
+                            <p className="font-medium text-sm">{citizen.socialStatus}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Right Column - Location Info */}
+                    <div className="space-y-2">
+                      {citizen.region && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">المنطقة</p>
+                          <p className="font-medium text-sm">{citizen.region}</p>
+                        </div>
+                      )}
+                      {citizen.city && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">المدينة</p>
+                          <p className="font-medium text-sm">{citizen.city}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
-                
-                <div className="pl-4 border-l border-border/50 text-left">
-                  <p className="text-sm text-muted-foreground">العنوان</p>
-                  <p className="font-medium">{citizen.address}</p>
-                  <p className="text-sm text-muted-foreground mt-2">اسم الأم</p>
-                  <p className="font-medium">{citizen.motherName}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
+                </motion.div>
+              ))}
+            </div>
+          </>
+        ) : null}
       </div>
     </div>
   );

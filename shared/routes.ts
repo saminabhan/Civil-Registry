@@ -20,7 +20,7 @@ export const api = {
   auth: {
     login: {
       method: 'POST' as const,
-      path: '/api/auth/login',
+      path: '/auth/login',
       input: z.object({
         username: z.string(),
         password: z.string(),
@@ -32,14 +32,14 @@ export const api = {
     },
     logout: {
       method: 'POST' as const,
-      path: '/api/auth/logout',
+      path: '/auth/logout',
       responses: {
         200: z.object({ message: z.string() }),
       },
     },
     me: {
       method: 'GET' as const,
-      path: '/api/auth/me',
+      path: '/auth/me',
       responses: {
         200: z.custom<typeof users.$inferSelect>(),
         401: errorSchemas.unauthorized,
@@ -49,14 +49,14 @@ export const api = {
   users: {
     list: {
       method: 'GET' as const,
-      path: '/api/users',
+      path: '/users',
       responses: {
         200: z.array(z.custom<typeof users.$inferSelect>()),
       },
     },
     create: {
       method: 'POST' as const,
-      path: '/api/users',
+      path: '/users',
       input: insertUserSchema,
       responses: {
         201: z.custom<typeof users.$inferSelect>(),
@@ -65,7 +65,7 @@ export const api = {
     },
     toggleStatus: {
       method: 'PATCH' as const,
-      path: '/api/users/:id/status',
+      path: '/users/:id/status',
       input: z.object({ isActive: z.boolean() }),
       responses: {
         200: z.custom<typeof users.$inferSelect>(),
@@ -76,14 +76,14 @@ export const api = {
   citizens: {
     list: {
       method: 'GET' as const,
-      path: '/api/citizens',
+      path: '/citizens',
       responses: {
         200: z.array(z.custom<typeof citizens.$inferSelect>()),
       },
     },
     search: {
       method: 'GET' as const,
-      path: '/api/citizens/search',
+      path: '/citizens/search',
       input: z.object({
         nationalId: z.string().optional(),
         firstName: z.string().optional(),
@@ -97,7 +97,7 @@ export const api = {
     },
     create: { // For seeding or admin use
       method: 'POST' as const,
-      path: '/api/citizens',
+      path: '/citizens',
       input: insertCitizenSchema,
       responses: {
         201: z.custom<typeof citizens.$inferSelect>(),
@@ -107,14 +107,14 @@ export const api = {
   logs: {
     list: {
       method: 'GET' as const,
-      path: '/api/logs',
+      path: '/logs',
       responses: {
         200: z.array(z.custom<typeof auditLogs.$inferSelect & { username?: string }>()),
       },
     },
     create: { // For frontend to report navigation events
       method: 'POST' as const,
-      path: '/api/logs',
+      path: '/logs',  
       input: z.object({
         action: z.string(),
         details: z.string().optional(),
