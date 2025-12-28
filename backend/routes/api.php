@@ -36,6 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // User routes
     Route::get('/users', [UserController::class, 'index']);
+    Route::get('/users/{id}', [UserController::class, 'show']);
     Route::post('/users', [UserController::class, 'store']);
     Route::patch('/users/{id}/status', [UserController::class, 'toggleStatus']);
     
@@ -44,6 +45,9 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Audit logs routes
     Route::get('/logs', [AuditLogController::class, 'index']);
+    Route::get('/logs/users', [AuditLogController::class, 'getUsersWithLogCounts']);
+    Route::get('/logs/user/{userId}', [AuditLogController::class, 'getUserLogs']);
+    Route::get('/logs/user/{userId}/searches', [AuditLogController::class, 'getUserRecentSearches']);
     Route::post('/logs', function (Request $request) {
         $request->validate([
             'action' => 'required|string|max:50',

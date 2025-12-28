@@ -21,8 +21,8 @@ export function Sidebar() {
   // Close sidebar on route change (mobile)
   const handleNavClick = () => setIsOpen(false);
 
-  const NavItem = ({ href, icon: Icon, children }: { href: string; icon: any; children: React.ReactNode }) => {
-    const isActive = location === href;
+  const NavItem = ({ href, icon: Icon, children, matchPattern }: { href: string; icon: any; children: React.ReactNode; matchPattern?: string }) => {
+    const isActive = location === href || (matchPattern && location.startsWith(matchPattern));
     return (
       <Link href={href} className={cn(
         "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
@@ -94,7 +94,7 @@ export function Sidebar() {
               <NavItem href="/users" icon={Users}>
                 إدارة المستخدمين
               </NavItem>
-              <NavItem href="/logs" icon={FileText}>
+              <NavItem href="/logs" icon={FileText} matchPattern="/logs">
                 سجلات النشاط
               </NavItem>
             </>

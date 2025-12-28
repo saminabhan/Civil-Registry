@@ -2,6 +2,9 @@ import { useState } from "react";
 import { useUsers, useCreateUser, useToggleUserStatus } from "@/hooks/use-users";
 import { Loader2, Plus, UserCheck, UserX, Shield, ShieldAlert, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Pagination } from "@/components/ui/pagination";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,9 +21,40 @@ const createUserSchema = z.object({
 type CreateUserForm = z.infer<typeof createUserSchema>;
 
 export default function Users() {
-  const { data: users, isLoading } = useUsers();
+  const [currentPage, setCurrentPage] = useState(1);
+  const { data, isLoading } = useUsers(currentPage);
   const { mutate: toggleStatus } = useToggleUserStatus();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleToggleStatus = (id: number, isActive: boolean) => {
+    if (id === 1) {
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "لا يمكن تعديل حساب System Admin",
+      });
+      return;
+    }
+    
+    toggleStatus({ id, isActive }, {
+      onError: (error: any) => {
+        const errorMessage = error?.response?.data?.message || "حدث خطأ أثناء تعديل الحالة";
+        toast({
+          variant: "destructive",
+          title: "خطأ",
+          description: errorMessage,
+        });
+      },
+    });
+  };
+  
+  const users = data?.data || [];
+  const pagination = data ? {
+    currentPage: data.currentPage || 1,
+    lastPage: data.lastPage || 1,
+    total: data.total || 0,
+  } : null;
 
   return (
     <div className="space-y-8" dir="rtl">
@@ -87,21 +121,46 @@ export default function Users() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <button
-                      onClick={() => toggleStatus({ id: user.id, isActive: !user.isActive })}
-                      className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-                        user.isActive 
-                          ? "border-destructive/30 text-destructive hover:bg-destructive/10" 
-                          : "border-green-600/30 text-green-600 hover:bg-green-50"
-                      }`}
-                    >
-                      {user.isActive ? "تعطيل الحساب" : "تفعيل الحساب"}
-                    </button>
+                    {user.id === 1 ? (
+                      <div className="flex items-center gap-3">
+                        <Switch
+                          checked={user.isActive}
+                          disabled
+                          className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-gray-300 opacity-50 cursor-not-allowed"
+                        />
+                        <span className={`text-sm font-medium transition-colors ${
+                          user.isActive ? "text-green-600" : "text-gray-500"
+                        }`}>
+                          {user.isActive ? "نشط" : "معطل"}
+                        </span>
+                        <span className="text-xs text-muted-foreground">(مدير النظام)</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <Switch
+                          checked={user.isActive}
+                          onCheckedChange={(checked) => handleToggleStatus(user.id, checked)}
+                          className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-gray-300"
+                        />
+                        <span className={`text-sm font-medium transition-colors ${
+                          user.isActive ? "text-green-600" : "text-gray-500"
+                        }`}>
+                          {user.isActive ? "نشط" : "معطل"}
+                        </span>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          {pagination && pagination.lastPage > 1 && (
+            <Pagination
+              currentPage={pagination.currentPage}
+              lastPage={pagination.lastPage}
+              onPageChange={setCurrentPage}
+            />
+          )}
         </div>
       )}
     </div>

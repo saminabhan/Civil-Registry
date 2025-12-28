@@ -11,12 +11,15 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::orderBy('id', 'desc')->get();
+        $perPage = 15;
+        $page = $request->get('page', 1);
+        
+        $paginated = User::orderBy('id', 'desc')->paginate($perPage, ['*'], 'page', $page);
         
         // Transform users to camelCase for frontend compatibility
-        return $users->map(function ($user) {
+        $data = $paginated->map(function ($user) {
             return [
                 'id' => $user->id,
                 'username' => $user->username,
@@ -26,6 +29,28 @@ class UserController extends Controller
                 'createdAt' => $user->created_at,
             ];
         });
+        
+        return response()->json([
+            'data' => $data,
+            'currentPage' => $paginated->currentPage(),
+            'lastPage' => $paginated->lastPage(),
+            'perPage' => $paginated->perPage(),
+            'total' => $paginated->total(),
+        ]);
+    }
+
+    public function show($id)
+    {
+        $user = User::findOrFail($id);
+        
+        return response()->json([
+            'id' => $user->id,
+            'username' => $user->username,
+            'name' => $user->name,
+            'isAdmin' => (bool) $user->is_admin,
+            'isActive' => (bool) $user->is_active,
+            'createdAt' => $user->created_at,
+        ]);
     }
 
     public function store(Request $request)
@@ -87,6 +112,14 @@ class UserController extends Controller
         ]);
 
         $user = User::findOrFail($id);
+        
+        // Prevent modification of System Admin (ID = 1)
+        if ($user->id === 1) {
+            return response()->json([
+                'message' => 'لا يمكن تعديل حساب System Admin'
+            ], 403);
+        }
+        
         $oldStatus = $user->is_active;
         $user->is_active = $request->isActive;
         $user->save();

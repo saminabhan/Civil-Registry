@@ -29,4 +29,9 @@ class User extends Authenticatable
         'is_admin' => 'boolean',
         'is_active' => 'boolean',
     ];
+
+    public function auditLogs()
+    {
+        return $this->hasMany(\App\Models\AuditLog::class);
+    }
 }

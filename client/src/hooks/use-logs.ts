@@ -6,9 +6,9 @@ import { useLocation } from "wouter";
 
 const API_BASE_URL = "http://127.0.0.1:8000";
 
-export function useLogs() {
+export function useLogs(page: number = 1) {
   return useQuery({
-    queryKey: [api.logs.list.path],
+    queryKey: [api.logs.list.path, page],
     queryFn: async () => {
       const token = localStorage.getItem("token");
       const headers: HeadersInit = {};
@@ -16,12 +16,19 @@ export function useLogs() {
         headers.Authorization = `Bearer ${token}`;
       }
       
-      const res = await fetch(`${API_BASE_URL}${api.logs.list.path}`, { 
+      const res = await fetch(`${API_BASE_URL}${api.logs.list.path}?page=${page}`, { 
         headers,
         credentials: "include" 
       });
       if (!res.ok) throw new Error("فشل تحميل السجلات");
-      return api.logs.list.responses[200].parse(await res.json());
+      const json = await res.json();
+      return {
+        data: json.data || [],
+        currentPage: json.currentPage || 1,
+        lastPage: json.lastPage || 1,
+        perPage: json.perPage || 15,
+        total: json.total || 0,
+      };
     },
   });
 }
@@ -41,6 +48,99 @@ export function useCreateLog() {
         body: JSON.stringify(data),
         credentials: "include",
       });
+    },
+  });
+}
+
+export function useUsersWithLogCounts() {
+  return useQuery({
+    queryKey: ['users-with-logs'],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      const headers: HeadersInit = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      
+      const res = await fetch(`${API_BASE_URL}/api/logs/users`, { 
+        headers,
+        credentials: "include" 
+      });
+      if (!res.ok) throw new Error("فشل تحميل المستخدمين");
+      return await res.json();
+    },
+  });
+}
+
+export function useUserLogs(userId: number | null, page: number = 1) {
+  return useQuery({
+    queryKey: ['user-logs', userId, page],
+    queryFn: async () => {
+      if (!userId) return { data: [], currentPage: 1, lastPage: 1, total: 0 };
+      
+      const token = localStorage.getItem("token");
+      const headers: HeadersInit = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      
+      const res = await fetch(`${API_BASE_URL}/api/logs/user/${userId}?page=${page}`, { 
+        headers,
+        credentials: "include" 
+      });
+      if (!res.ok) throw new Error("فشل تحميل سجلات المستخدم");
+      const json = await res.json();
+      return {
+        data: json.data || [],
+        currentPage: json.currentPage || 1,
+        lastPage: json.lastPage || 1,
+        perPage: json.perPage || 20,
+        total: json.total || 0,
+      };
+    },
+    enabled: !!userId,
+  });
+}
+
+export function useUserRecentSearches(userId: number | null) {
+  return useQuery({
+    queryKey: ['user-recent-searches', userId],
+    queryFn: async () => {
+      if (!userId) return [];
+      
+      const token = localStorage.getItem("token");
+      const headers: HeadersInit = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      
+      const res = await fetch(`${API_BASE_URL}/api/logs/user/${userId}/searches`, { 
+        headers,
+        credentials: "include" 
+      });
+      if (!res.ok) throw new Error("فشل تحميل عمليات البحث");
+      return await res.json();
+    },
+    enabled: !!userId,
+  });
+}
+
+export function useRecentSearches() {
+  return useQuery({
+    queryKey: ['recent-searches'],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      const headers: HeadersInit = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      
+      const res = await fetch(`${API_BASE_URL}/api/logs/recent-searches`, { 
+        headers,
+        credentials: "include" 
+      });
+      if (!res.ok) throw new Error("فشل تحميل آخر عمليات البحث");
+      return await res.json();
     },
   });
 }

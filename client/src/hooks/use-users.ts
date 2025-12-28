@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/axios";
 
-export function useUsers() {
+export function useUsers(page: number = 1) {
   return useQuery({
-    queryKey: ["users"],
+    queryKey: ["users", page],
     queryFn: async () => {
-      const { data } = await api.get("/users");
+      const { data } = await api.get(`/users?page=${page}`);
       return data;
     },
   });
@@ -43,6 +43,18 @@ export function useCreateUser() {
   });
 }
 
+
+export function useUser(userId: number | null) {
+  return useQuery({
+    queryKey: ["user", userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      const { data } = await api.get(`/users/${userId}`);
+      return data;
+    },
+    enabled: !!userId,
+  });
+}
 
 export function useToggleUserStatus() {
   const queryClient = useQueryClient();

@@ -12,6 +12,8 @@ import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import Users from "@/pages/Users";
 import Logs from "@/pages/Logs";
+import AllLogs from "@/pages/AllLogs";
+import UserLogs from "@/pages/UserLogs";
 import NotFound from "@/pages/not-found";
 import { Sidebar } from "@/components/layout/Sidebar";
 
@@ -65,6 +67,14 @@ function Router() {
       
       <Route path="/logs">
         <ProtectedRoute component={Logs} adminOnly />
+      </Route>
+      
+      <Route path="/logs/all">
+        <ProtectedRoute component={AllLogs} adminOnly />
+      </Route>
+      
+      <Route path="/logs/user/:userId">
+        <ProtectedRoute component={UserLogs} adminOnly />
       </Route>
       
       <Route component={NotFound} />

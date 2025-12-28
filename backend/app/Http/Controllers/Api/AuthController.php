@@ -25,6 +25,13 @@ class AuthController extends Controller
             ], 401);
         }
 
+        // Check if user account is active
+        if (! $user->is_active) {
+            return response()->json([
+                'message' => 'الحساب معطل. يرجى الاتصال بالمسؤول لتفعيل الحساب.'
+            ], 403);
+        }
+
         $token = $user->createToken('api-token')->plainTextToken;
 
         // Log login action
