@@ -113,7 +113,7 @@ export default function Login() {
           </form>
           
           <div className="mt-8 text-center text-sm text-muted-foreground">
-            نظام السجل المدني الآمن © 2024
+            نظام السجل المدني © 2025
           </div>
         </div>
 
@@ -135,12 +135,12 @@ export default function Login() {
             </div>
             <h2 className="text-4xl font-bold mb-6 leading-tight">بوابة السجل المدني<br/>المركزية</h2>
             <p className="text-lg text-white/80 leading-relaxed max-w-md">
-              منصة آمنة ومتطورة لإدارة بيانات المواطنين بكفاءة عالية وسرية تامة.
+              منصة آمنة ومتطورة لإدارة بيانات المواطنين بكفاءة عالية و تدقيق منطقي.
             </p>
 
             <div className="mt-12 flex gap-4">
               <div className="flex flex-col gap-1">
-                <span className="text-3xl font-bold">10k+</span>
+                <span className="text-3xl font-bold">3M+</span>
                 <span className="text-sm text-white/60">سجل مواطن</span>
               </div>
               <div className="w-px h-12 bg-white/20 mx-4" />
