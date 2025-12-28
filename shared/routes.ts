@@ -1,6 +1,6 @@
 
 import { z } from 'zod';
-import { insertUserSchema, insertCitizenSchema, insertAuditLogSchema, users, citizens, auditLogs } from './schema';
+import { insertUserSchema, insertCitizenSchema, insertAuditLogSchema, users, citizens, auditLogs, type InsertCitizen } from './schema';
 
 // Shared error schemas
 export const errorSchemas = {
@@ -130,3 +130,7 @@ export function buildUrl(path: string, params?: Record<string, string | number>)
   }
   return url;
 }
+
+// Export types for use in client
+export type LoginRequest = z.infer<typeof api.auth.login.input>;
+export { type InsertCitizen } from './schema';

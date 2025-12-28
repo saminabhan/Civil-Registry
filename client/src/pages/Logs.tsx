@@ -49,7 +49,7 @@ export default function Logs() {
                     {log.details || "-"}
                   </td>
                   <td className="px-6 py-4 text-sm text-muted-foreground whitespace-nowrap font-mono text-xs">
-                    {new Date(log.timestamp!).toLocaleString('ar-SA')}
+                    {log.createdAt ? new Date(log.createdAt).toLocaleString('ar-SA') : '-'}
                   </td>
                 </tr>
               ))}

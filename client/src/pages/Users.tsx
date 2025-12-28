@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
+import type { User } from "@shared/schema";
 
 const createUserSchema = z.object({
   username: z.string().min(3, "يجب أن يكون الاسم 3 أحرف على الأقل"),
@@ -49,7 +50,7 @@ export default function Users() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {users?.map((user) => (
+              {users?.map((user: User) => (
                 <tr key={user.id} className="hover:bg-muted/10 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">

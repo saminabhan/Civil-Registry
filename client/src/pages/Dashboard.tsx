@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useSearchCitizens, useCreateCitizen } from "@/hooks/use-citizens";
 import { useAuth } from "@/hooks/use-auth";
-import { useCreateLog } from "@/hooks/use-logs";
 import { Search, Loader2, UserPlus, Info } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
@@ -12,7 +11,6 @@ export default function Dashboard() {
   const [triggerSearch, setTriggerSearch] = useState(false);
   
   const { data: results, isLoading } = useSearchCitizens(triggerSearch ? searchParams : null);
-  const { mutate: logAction } = useCreateLog();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,12 +28,7 @@ export default function Dashboard() {
 
     setSearchParams(params);
     setTriggerSearch(true);
-    
-    // Log the search
-    logAction({ 
-      action: 'SEARCH', 
-      details: `Search by ${activeTab}: ${JSON.stringify(params)}` 
-    });
+    // Note: Search logging is now handled automatically by the backend
   };
 
   return (

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -19,11 +19,12 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const [error, setError] = useState<string | null>(null);
 
-  // Redirect if already logged in
-  if (user) {
-    setLocation("/dashboard");
-    return null;
-  }
+  useEffect(() => {
+    if (user) {
+      setLocation("/dashboard");
+    }
+  }, [user, setLocation]);
+  
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -31,9 +32,14 @@ export default function Login() {
 
   const onSubmit = (data: LoginForm) => {
     setError(null);
+    console.log("Form submitted with data:", data);
     login(data, {
       onError: (err) => {
-        setError(err.message);
+        console.error("Login error:", err);
+        setError(err.message || "حدث خطأ أثناء تسجيل الدخول");
+      },
+      onSuccess: () => {
+        console.log("Login successful");
       }
     });
   };
@@ -91,6 +97,7 @@ export default function Login() {
             )}
 
             <button
+              type="submit"
               disabled={isLoggingIn}
               className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
             >

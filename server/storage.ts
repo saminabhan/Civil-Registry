@@ -31,24 +31,32 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db.select().from(users).where(eq(users.username, username));
     return user;
   }
-
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
+    await db.insert(users).values(insertUser);
+  
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, insertUser.username));
+  
     return user;
   }
+    
 
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users).orderBy(desc(users.createdAt));
   }
 
   async updateUserStatus(id: number, isActive: boolean): Promise<User | undefined> {
-    const [user] = await db.update(users)
+    await db
+      .update(users)
       .set({ isActive })
-      .where(eq(users.id, id))
-      .returning();
+      .where(eq(users.id, id));
+  
+    const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
-
+  
   // Citizens
   async searchCitizens(params: SearchCitizenParams): Promise<Citizen[]> {
     const conditions = [];
@@ -69,9 +77,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCitizen(insertCitizen: InsertCitizen): Promise<Citizen> {
-    const [citizen] = await db.insert(citizens).values(insertCitizen).returning();
+    await db.insert(citizens).values(insertCitizen);
+  
+    const [citizen] = await db
+      .select()
+      .from(citizens)
+      .where(eq(citizens.nationalId, insertCitizen.nationalId));
+  
     return citizen;
   }
+    
 
   // Logs
   async createAuditLog(log: InsertAuditLog): Promise<void> {
@@ -84,12 +99,12 @@ export class DatabaseStorage implements IStorage {
       userId: auditLogs.userId,
       action: auditLogs.action,
       details: auditLogs.details,
-      timestamp: auditLogs.timestamp,
+      createdAt: auditLogs.createdAt,
       username: users.username,
     })
     .from(auditLogs)
     .leftJoin(users, eq(auditLogs.userId, users.id))
-    .orderBy(desc(auditLogs.timestamp))
+    .orderBy(desc(auditLogs.createdAt))
     .limit(100); // Limit logs for performance
     
     return logs;

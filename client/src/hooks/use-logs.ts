@@ -1,13 +1,25 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@shared/routes";
+import apiClient from "@/lib/axios";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
+
+const API_BASE_URL = "http://127.0.0.1:8000";
 
 export function useLogs() {
   return useQuery({
     queryKey: [api.logs.list.path],
     queryFn: async () => {
-      const res = await fetch(api.logs.list.path, { credentials: "include" });
+      const token = localStorage.getItem("token");
+      const headers: HeadersInit = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      
+      const res = await fetch(`${API_BASE_URL}${api.logs.list.path}`, { 
+        headers,
+        credentials: "include" 
+      });
       if (!res.ok) throw new Error("فشل تحميل السجلات");
       return api.logs.list.responses[200].parse(await res.json());
     },
@@ -17,9 +29,15 @@ export function useLogs() {
 export function useCreateLog() {
   return useMutation({
     mutationFn: async (data: { action: string; details?: string }) => {
-      await fetch(api.logs.create.path, {
+      const token = localStorage.getItem("token");
+      const headers: HeadersInit = { "Content-Type": "application/json" };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      
+      await fetch(`${API_BASE_URL}${api.logs.create.path}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(data),
         credentials: "include",
       });
