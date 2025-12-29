@@ -23,11 +23,3 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
-
-# CORS Headers - السماح بكل شيء
-<IfModule mod_headers.c>
-    Header set Access-Control-Allow-Origin "*"
-    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-    Header set Access-Control-Allow-Headers "*"
-    Header set Access-Control-Allow-Credentials "true"
-</IfModule>
