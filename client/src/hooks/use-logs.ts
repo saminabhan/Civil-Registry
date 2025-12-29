@@ -4,8 +4,11 @@ import apiClient from "@/lib/axios";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 
-const API_BASE_URL = "http://127.0.0.1:8000/api";
-
+// In all your hooks files, replace hardcoded API_BASE_URL with:
+const API_BASE_URL = import.meta.env.MODE === "development" 
+  ? "http://127.0.0.1:8000/api"
+  : "/api"; // Use relative path in production
+  
 export function useLogs(page: number = 1) {
   return useQuery({
     queryKey: [api.logs.list.path, page],
