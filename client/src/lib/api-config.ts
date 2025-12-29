@@ -7,7 +7,7 @@
  */
 export function getApiBaseUrl(): string {
   // التحقق من الـ hostname الحالي أولاً (يعمل في المتصفح)
-  if (typeof window !== "undefined") {
+  if (typeof window !== "undefined" && window.location) {
     const hostname = window.location.hostname;
     
     // إذا كان localhost أو 127.0.0.1
@@ -21,7 +21,7 @@ export function getApiBaseUrl(): string {
     }
   }
 
-  // في حالة التطوير المحلي (عند البناء)
+  // في حالة التطوير المحلي (عند البناء فقط)
   if (import.meta.env.MODE === "development") {
     return "http://127.0.0.1:8000/api";
   }
@@ -30,6 +30,6 @@ export function getApiBaseUrl(): string {
   return "http://civil.idap.aiocp.org/api";
 }
 
-// تصدير الدالة للاستخدام الديناميكي
-export const API_BASE_URL = getApiBaseUrl();
+// تصدير getter function للاستخدام الديناميكي
+export const API_BASE_URL = () => getApiBaseUrl();
 

@@ -335,7 +335,7 @@ export function useCreateCitizen() {
         headers.Authorization = `Bearer ${token}`;
       }
       
-      const res = await fetch(`${API_BASE_URL}${api.citizens.create.path}`, {
+      const res = await fetch(`${API_BASE_URL()}${api.citizens.create.path}`, {
         method: "POST",
         headers,
         body: JSON.stringify(data),
