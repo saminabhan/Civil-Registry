@@ -6,6 +6,7 @@
  * - أي hostname آخر → نفس النطاق/api
  */
 export function getApiBaseUrl(): string {
+  // دائماً نعتمد على window.location في وقت التشغيل (runtime)
   if (typeof window !== "undefined" && window.location) {
     const hostname = window.location.hostname.toLowerCase().trim();
     const protocol = window.location.protocol; // http: أو https:
@@ -16,6 +17,7 @@ export function getApiBaseUrl(): string {
     }
     
     // لأي hostname آخر (بما في ذلك civil.infinet.ps)، استخدم نفس النطاق مع البروتوكول الحالي
+    // هذا يضمن أن API يكون على نفس النطاق مثل Frontend
     return `${protocol}//${hostname}/api`;
   }
 

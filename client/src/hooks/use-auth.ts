@@ -11,8 +11,16 @@ export function useAuth() {
   const userQuery = useQuery({
     queryKey: [api.auth.me.path],
     queryFn: async () => {
-      const res = await apiClient.get(api.auth.me.path);
-      return api.auth.me.responses[200].parse(res.data);
+      try {
+        const res = await apiClient.get(api.auth.me.path);
+        return api.auth.me.responses[200].parse(res.data);
+      } catch (error: any) {
+        // إذا كان 401، المستخدم غير مسجل دخول - هذا طبيعي
+        if (error.response?.status === 401) {
+          return null;
+        }
+        throw error;
+      }
     },
     retry: false,
   });
