@@ -1,11 +1,11 @@
 import axios from "axios";
 import { getApiBaseUrl } from "./api-config";
 
-const api = axios.create({
+const apiClient = axios.create({
   withCredentials: true,
 });
 
-api.interceptors.request.use((config) => {
+apiClient.interceptors.request.use((config) => {
   // تحديث baseURL ديناميكياً في كل طلب
   config.baseURL = getApiBaseUrl();
   
@@ -13,14 +13,8 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
   return config;
 });
 
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-export default api;
+export default apiClient;
