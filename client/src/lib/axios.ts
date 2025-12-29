@@ -5,8 +5,8 @@ const api = axios.create({
     import.meta.env.MODE === "development"
       ? "http://127.0.0.1:8000/api"
       : "https://civil.infinet.ps/api",
-  withCredentials: true,
 });
+
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
