@@ -4,7 +4,7 @@ import axios from "axios";
 import apiClient from "@/lib/axios";
 
 const EXTERNAL_API_BASE_URL = "https://dgapi.eservice.aiocp.org/api";
-const API_BASE_URL = "https://civil.infinet.ps/api";
+const API_BASE_URL = "http://127.0.0.1:8000/api";
 
 // Normalize Arabic characters - convert all forms of Alef (أ، إ، آ، ا) to ا
 function normalizeArabic(text: string | null | undefined): string {
