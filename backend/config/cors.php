@@ -19,7 +19,7 @@ return [
 
     'max_age' => 0,
 
-    // مهم جداً
-    'supports_credentials' => false,
+    // السماح بكل شيء
+    'supports_credentials' => true,
 
 ];
