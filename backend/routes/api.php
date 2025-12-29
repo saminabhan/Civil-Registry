@@ -19,15 +19,30 @@ Route::get('/auth/login', function () {
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', function (Request $request) {
-        $user = $request->user();
-        return [
-            'id' => $user->id,
-            'username' => $user->username,
-            'name' => $user->name,
-            'isAdmin' => (bool) $user->is_admin,
-            'isActive' => (bool) $user->is_active,
-            'createdAt' => $user->created_at,
-        ];
+        try {
+            $user = $request->user();
+            
+            if (!$user) {
+                return response()->json([
+                    'message' => 'Unauthenticated. Please log in.'
+                ], 401);
+            }
+            
+            return response()->json([
+                'id' => $user->id,
+                'username' => $user->username,
+                'name' => $user->name,
+                'isAdmin' => (bool) $user->is_admin,
+                'isActive' => (bool) $user->is_active,
+                'createdAt' => $user->created_at,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in /auth/me: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'An error occurred while fetching user data.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
+        }
     });
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     
@@ -43,17 +58,38 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/logs/user/{userId}', [AuditLogController::class, 'getUserLogs']);
     Route::get('/logs/user/{userId}/searches', [AuditLogController::class, 'getUserRecentSearches']);
     Route::post('/logs', function (Request $request) {
-        $request->validate([
-            'action' => 'required|string|max:50',
-            'details' => 'nullable|string',
-        ]);
+        try {
+            $request->validate([
+                'action' => 'required|string|max:50',
+                'details' => 'nullable|string',
+            ]);
 
-        \App\Models\AuditLog::create([
-            'user_id' => $request->user()->id,
-            'action' => $request->action,
-            'details' => $request->details,
-        ]);
+            $user = $request->user();
+            
+            if (!$user) {
+                return response()->json([
+                    'message' => 'Unauthenticated. Please log in.'
+                ], 401);
+            }
 
-        return response()->json(['message' => 'Log created'], 201);
+            \App\Models\AuditLog::create([
+                'user_id' => $user->id,
+                'action' => $request->action,
+                'details' => $request->details,
+            ]);
+
+            return response()->json(['message' => 'Log created'], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error in /logs: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'An error occurred while creating log.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
+        }
     });
 });

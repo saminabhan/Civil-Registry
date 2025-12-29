@@ -1,8 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type LoginRequest } from "@shared/routes";
 import { useLocation } from "wouter";
-
-const API_BASE_URL = "http://127.0.0.1:8000/api";
+import { API_BASE_URL } from "@/lib/api-config";
 
 export function useAuth() {
   const queryClient = useQueryClient();
@@ -22,7 +21,10 @@ export function useAuth() {
         credentials: "include" 
       });
       if (res.status === 401) return null;
-      if (!res.ok) throw new Error("Failed to fetch user");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to fetch user");
+      }
       return api.auth.me.responses[200].parse(await res.json());
     },
     retry: false,

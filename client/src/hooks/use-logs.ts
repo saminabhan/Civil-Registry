@@ -3,8 +3,7 @@ import { api } from "@shared/routes";
 import apiClient from "@/lib/axios";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
-
-const API_BASE_URL = "http://127.0.0.1:8000/api";
+import { API_BASE_URL } from "@/lib/api-config";
 
 export function useLogs(page: number = 1) {
   return useQuery({
@@ -42,12 +41,19 @@ export function useCreateLog() {
         headers.Authorization = `Bearer ${token}`;
       }
       
-      await fetch(`${API_BASE_URL}${api.logs.create.path}`, {
+      const res = await fetch(`${API_BASE_URL}${api.logs.create.path}`, {
         method: "POST",
         headers,
         body: JSON.stringify(data),
         credentials: "include",
       });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to create log");
+      }
+      
+      return await res.json();
     },
   });
 }
