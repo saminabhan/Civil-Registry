@@ -1,9 +1,9 @@
 /**
  * تحديد API Base URL بناءً على الـ hostname الحالي
  * يدعم:
- * - localhost / 127.0.0.1 → http://127.0.0.1:8000/api
+ * - localhost / 127.0.0.1 (أي port) → http://127.0.0.1:8000/api
  * - civil.infinet.ps → https://civil.infinet.ps/api (نفس النطاق)
- * - أي hostname آخر → https://civil.infinet.ps/api
+ * - أي hostname آخر → نفس النطاق/api
  */
 export function getApiBaseUrl(): string {
     // دائماً نعتمد على window.location في وقت التشغيل
@@ -11,7 +11,7 @@ export function getApiBaseUrl(): string {
       const hostname = window.location.hostname.toLowerCase().trim();
       const protocol = window.location.protocol; // http: أو https:
       
-      // إذا كان localhost أو 127.0.0.1 فقط، استخدم localhost
+      // إذا كان localhost أو 127.0.0.1 (أي port)، استخدم localhost API
       if (hostname === "localhost" || hostname === "127.0.0.1") {
         return "http://127.0.0.1:8000/api";
       }
