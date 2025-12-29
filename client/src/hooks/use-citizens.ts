@@ -4,10 +4,7 @@ import axios from "axios";
 import apiClient from "@/lib/axios";
 
 const EXTERNAL_API_BASE_URL = "https://dgapi.eservice.aiocp.org/api";
-// In all your hooks files, replace hardcoded API_BASE_URL with:
-const API_BASE_URL = import.meta.env.MODE === "development" 
-  ? "http://127.0.0.1:8000/api"
-  : "/api"; // Use relative path in production
+import { API_BASE_URL } from "@/lib/api-config";
 // Normalize Arabic characters - convert all forms of Alef (أ، إ، آ، ا) to ا
 function normalizeArabic(text: string | null | undefined): string {
   if (!text) return '';

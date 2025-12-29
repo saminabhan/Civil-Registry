@@ -1,10 +1,8 @@
 import axios from "axios";
+import { getApiBaseUrl } from "./api-config";
 
 const api = axios.create({
-  baseURL:
-    import.meta.env.MODE === "development"
-      ? "http://127.0.0.1:8000/api"
-      : "https://civil.infinet.ps/api",
+  baseURL: getApiBaseUrl(),
   withCredentials: true,
 });
 
