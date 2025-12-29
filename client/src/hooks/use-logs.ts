@@ -3,7 +3,7 @@ import { api } from "@shared/routes";
 import apiClient from "@/lib/axios";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
-import { API_BASE_URL } from "@/lib/api-config";
+import { getApiBaseUrl } from "@/lib/api-config";
 
 export function useLogs(page: number = 1) {
   return useQuery({
@@ -15,7 +15,7 @@ export function useLogs(page: number = 1) {
         headers.Authorization = `Bearer ${token}`;
       }
       
-      const res = await fetch(`${API_BASE_URL}${api.logs.list.path}?page=${page}`, { 
+      const res = await fetch(`${getApiBaseUrl()}${api.logs.list.path}?page=${page}`, { 
         headers,
         credentials: "include" 
       });
@@ -41,7 +41,7 @@ export function useCreateLog() {
         headers.Authorization = `Bearer ${token}`;
       }
       
-      const res = await fetch(`${API_BASE_URL}${api.logs.create.path}`, {
+      const res = await fetch(`${getApiBaseUrl()}${api.logs.create.path}`, {
         method: "POST",
         headers,
         body: JSON.stringify(data),
@@ -68,7 +68,7 @@ export function useUsersWithLogCounts() {
         headers.Authorization = `Bearer ${token}`;
       }
       
-      const res = await fetch(`${API_BASE_URL}/logs/users`, { 
+      const res = await fetch(`${getApiBaseUrl()}/logs/users`, { 
         headers,
         credentials: "include" 
       });
@@ -90,7 +90,7 @@ export function useUserLogs(userId: number | null, page: number = 1) {
         headers.Authorization = `Bearer ${token}`;
       }
       
-      const res = await fetch(`${API_BASE_URL}/logs/user/${userId}?page=${page}`, { 
+      const res = await fetch(`${getApiBaseUrl()}/logs/user/${userId}?page=${page}`, { 
         headers,
         credentials: "include" 
       });
@@ -120,7 +120,7 @@ export function useUserRecentSearches(userId: number | null) {
         headers.Authorization = `Bearer ${token}`;
       }
       
-      const res = await fetch(`${API_BASE_URL}/logs/user/${userId}/searches`, { 
+      const res = await fetch(`${getApiBaseUrl()}/logs/user/${userId}/searches`, { 
         headers,
         credentials: "include" 
       });
@@ -141,7 +141,7 @@ export function useRecentSearches() {
         headers.Authorization = `Bearer ${token}`;
       }
       
-      const res = await fetch(`${API_BASE_URL}/logs/recent-searches`, { 
+      const res = await fetch(`${getApiBaseUrl()}/logs/recent-searches`, { 
         headers,
         credentials: "include" 
       });

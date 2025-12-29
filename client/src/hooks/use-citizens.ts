@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl, type InsertCitizen } from "@shared/routes";
 import axios from "axios";
 import apiClient from "@/lib/axios";
-import { API_BASE_URL } from "@/lib/api-config";
+import { getApiBaseUrl } from "@/lib/api-config";
 
 const EXTERNAL_API_BASE_URL = "https://dgapi.eservice.aiocp.org/api";
 
@@ -13,7 +13,7 @@ function normalizeArabic(text: string | null | undefined): string {
   const textStr = String(text).trim();
   if (!textStr) return '';
   
-
+  return textStr;
 }
 
 // API Response Types
@@ -336,7 +336,7 @@ export function useCreateCitizen() {
         headers.Authorization = `Bearer ${token}`;
       }
       
-      const res = await fetch(`${API_BASE_URL}${api.citizens.create.path}`, {
+      const res = await fetch(`${getApiBaseUrl()}${api.citizens.create.path}`, {
         method: "POST",
         headers,
         body: JSON.stringify(data),

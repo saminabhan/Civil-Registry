@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type LoginRequest } from "@shared/routes";
 import { useLocation } from "wouter";
-import { API_BASE_URL } from "@/lib/api-config";
+import { getApiBaseUrl } from "@/lib/api-config";
 
 export function useAuth() {
   const queryClient = useQueryClient();
@@ -24,7 +24,7 @@ export function useAuth() {
       };
       
       try {
-        const res = await fetch(`${API_BASE_URL}${api.auth.me.path}`, { 
+        const res = await fetch(`${getApiBaseUrl()}${api.auth.me.path}`, { 
           headers,
           credentials: "include" 
         });
@@ -59,7 +59,7 @@ export function useAuth() {
       console.log("Attempting login with credentials:", { username: credentials.username });
       
       try {
-        const res = await fetch(`${API_BASE_URL}${api.auth.login.path}`, {
+        const res = await fetch(`${getApiBaseUrl()}${api.auth.login.path}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(credentials),
@@ -102,7 +102,7 @@ export function useAuth() {
         headers.Authorization = `Bearer ${token}`;
       }
       
-      await fetch(`${API_BASE_URL}${api.auth.logout.path}`, { 
+      await fetch(`${getApiBaseUrl()}${api.auth.logout.path}`, { 
         method: "POST",
         headers,
         credentials: "include" 
