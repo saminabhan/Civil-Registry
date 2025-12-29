@@ -14,7 +14,7 @@ return [
         'http://localhost:5000',
         'http://127.0.0.1:3000',
         'http://localhost:3000',
-        'https://civil.infinet.ps/api',
+        'https://civil.infinet.ps',
     ],
 
     'allowed_origins_patterns' => [],
