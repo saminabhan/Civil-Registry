@@ -7,6 +7,14 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\CitizenController;
 
+// Test endpoint to check if API is working
+Route::get('/test', function () {
+    return response()->json([
+        'message' => 'API is working',
+        'timestamp' => now()->toDateTimeString(),
+    ]);
+});
+
 Route::post('/auth/login', [AuthController::class, 'login']);
 
 Route::get('/auth/login', function () {
@@ -36,11 +44,19 @@ Route::middleware('auth:sanctum')->group(function () {
                 'isActive' => (bool) $user->is_active,
                 'createdAt' => $user->created_at,
             ]);
+        } catch (\Illuminate\Auth\AuthenticationException $e) {
+            return response()->json([
+                'message' => 'Unauthenticated. Please log in.'
+            ], 401);
         } catch (\Exception $e) {
-            \Log::error('Error in /auth/me: ' . $e->getMessage());
+            \Log::error('Error in /auth/me: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'message' => 'An error occurred while fetching user data.',
-                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
+                'file' => config('app.debug') ? $e->getFile() . ':' . $e->getLine() : null,
             ], 500);
         }
     });

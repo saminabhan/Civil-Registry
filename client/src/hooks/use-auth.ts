@@ -11,21 +11,45 @@ export function useAuth() {
     queryKey: [api.auth.me.path],
     queryFn: async () => {
       const token = localStorage.getItem("token");
-      const headers: HeadersInit = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
+      
+      // If no token, return null immediately
+      if (!token) {
+        return null;
       }
       
-      const res = await fetch(`${API_BASE_URL}${api.auth.me.path}`, { 
-        headers,
-        credentials: "include" 
-      });
-      if (res.status === 401) return null;
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to fetch user");
+      const headers: HeadersInit = {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      };
+      
+      try {
+        const res = await fetch(`${API_BASE_URL}${api.auth.me.path}`, { 
+          headers,
+          credentials: "include" 
+        });
+        
+        if (res.status === 401) {
+          // Token is invalid, remove it
+          localStorage.removeItem("token");
+          return null;
+        }
+        
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          console.error('Error fetching user:', errorData);
+          throw new Error(errorData.message || `Failed to fetch user: ${res.status}`);
+        }
+        
+        return api.auth.me.responses[200].parse(await res.json());
+      } catch (error: any) {
+        console.error('Error in userQuery:', error);
+        // If it's a network error or 500, don't remove token
+        if (error.message?.includes('401') || error.message?.includes('Unauthenticated')) {
+          localStorage.removeItem("token");
+        }
+        throw error;
       }
-      return api.auth.me.responses[200].parse(await res.json());
     },
     retry: false,
   });

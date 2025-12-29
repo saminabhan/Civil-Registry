@@ -40,5 +40,21 @@ return Application::configure(basePath: dirname(__DIR__))
                 'message' => 'Unauthenticated'
             ], 401);
         });
+        
+        // Handle all exceptions for API routes
+        $exceptions->render(function (\Throwable $e, $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                \Log::error('API Error: ' . $e->getMessage(), [
+                    'exception' => $e,
+                    'trace' => $e->getTraceAsString()
+                ]);
+                
+                return response()->json([
+                    'message' => 'An error occurred',
+                    'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
+                    'file' => config('app.debug') ? $e->getFile() . ':' . $e->getLine() : null,
+                ], 500);
+            }
+        });
     })
     ->create();

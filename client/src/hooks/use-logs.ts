@@ -157,6 +157,17 @@ export function usePageTracking() {
   const { mutate: log } = useCreateLog();
 
   useEffect(() => {
+    // Only track navigation if user is logged in (has token)
+    const token = localStorage.getItem("token");
+    if (!token) {
+      return; // Don't track navigation if user is not logged in
+    }
+    
+    // Don't track login page
+    if (location === '/' || location === '/login') {
+      return;
+    }
+    
     log({ action: 'NAVIGATE', details: location });
   }, [location, log]);
 }
