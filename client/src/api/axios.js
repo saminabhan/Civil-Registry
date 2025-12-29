@@ -1,15 +1,11 @@
-import axios from "axios";
-import { getApiBaseUrl } from "../lib/api-config";
+import axios from 'axios';
 
 const api = axios.create({
-  withCredentials: true,
+  baseURL: 'https://civil.infinet.ps/api',
 });
 
 api.interceptors.request.use((config) => {
-  // تحديث baseURL ديناميكياً في كل طلب
-  config.baseURL = getApiBaseUrl();
-  
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

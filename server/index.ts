@@ -21,8 +21,6 @@ declare module "http" {
    CORS (SAFE for production)
 ================================ */
 const allowedOrigins = [
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
   "https://civil.infinet.ps",
 ];
 
@@ -132,7 +130,6 @@ app.use((req, res, next) => {
   ================================ */
   const port = parseInt(process.env.PORT || "5000", 10);
 
-  // 🔥 listen on ALL interfaces (not localhost)
   httpServer.listen(port, () => {
     log(`serving on port ${port}`);
   });

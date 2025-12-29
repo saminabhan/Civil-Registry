@@ -4,7 +4,8 @@ import axios from "axios";
 import apiClient from "@/lib/axios";
 
 const EXTERNAL_API_BASE_URL = "https://dgapi.eservice.aiocp.org/api";
-import { API_BASE_URL } from "@/lib/api-config";
+const API_BASE_URL = "https://civil.infinet.ps/api";
+
 // Normalize Arabic characters - convert all forms of Alef (أ، إ، آ، ا) to ا
 function normalizeArabic(text: string | null | undefined): string {
   if (!text) return '';
@@ -335,7 +336,7 @@ export function useCreateCitizen() {
         headers.Authorization = `Bearer ${token}`;
       }
       
-      const res = await fetch(`${API_BASE_URL()}${api.citizens.create.path}`, {
+      const res = await fetch(`${API_BASE_URL}${api.citizens.create.path}`, {
         method: "POST",
         headers,
         body: JSON.stringify(data),
