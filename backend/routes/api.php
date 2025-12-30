@@ -7,12 +7,32 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\CitizenController;
 
-// Test endpoint to check if API is working
+// Test endpoint to check if API is working (no database required)
 Route::get('/test', function () {
     return response()->json([
         'message' => 'API is working',
         'timestamp' => now()->toDateTimeString(),
+        'php_version' => PHP_VERSION,
     ]);
+});
+
+// Health check endpoint to test database connection
+Route::get('/health', function () {
+    try {
+        \DB::connection()->getPdo();
+        return response()->json([
+            'status' => 'healthy',
+            'database' => 'connected',
+            'timestamp' => now()->toDateTimeString(),
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'unhealthy',
+            'database' => 'disconnected',
+            'error' => config('app.debug') ? $e->getMessage() : 'Database connection failed',
+            'timestamp' => now()->toDateTimeString(),
+        ], 500);
+    }
 });
 
 Route::post('/auth/login', [AuthController::class, 'login']);

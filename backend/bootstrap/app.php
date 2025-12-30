@@ -41,19 +41,25 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 401);
         });
         
-        // Handle all exceptions for API routes
+        // Handle all exceptions for API routes - MUST be last
         $exceptions->render(function (\Throwable $e, $request) {
-            if ($request->is('api/*') || $request->expectsJson()) {
+            // Always return JSON for API routes
+            if ($request->is('api/*') || $request->expectsJson() || $request->wantsJson()) {
                 \Log::error('API Error: ' . $e->getMessage(), [
                     'exception' => $e,
-                    'trace' => $e->getTraceAsString()
+                    'trace' => $e->getTraceAsString(),
+                    'url' => $request->fullUrl(),
+                    'method' => $request->method(),
                 ]);
+                
+                $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
                 
                 return response()->json([
                     'message' => 'An error occurred',
                     'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
                     'file' => config('app.debug') ? $e->getFile() . ':' . $e->getLine() : null,
-                ], 500);
+                    'type' => config('app.debug') ? get_class($e) : null,
+                ], $statusCode);
             }
         });
     })
