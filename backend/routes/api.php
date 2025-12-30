@@ -53,6 +53,13 @@ Route::get('/auth/login', function () {
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', function (Request $request) {
+        // Debug: Log authentication info
+        \Log::info('Auth check in /auth/me', [
+            'has_user' => $request->user() !== null,
+            'user_id' => $request->user()?->id,
+            'has_auth_header' => $request->hasHeader('Authorization'),
+            'auth_header' => $request->header('Authorization') ? 'present' : 'missing',
+        ]);
         try {
             $user = $request->user();
             
@@ -109,16 +116,32 @@ Route::middleware('auth:sanctum')->group(function () {
             $user = $request->user();
             
             if (!$user) {
+                \Log::warning('Unauthenticated request to /logs', [
+                    'headers' => $request->headers->all(),
+                    'has_auth_header' => $request->hasHeader('Authorization'),
+                ]);
                 return response()->json([
                     'message' => 'Unauthenticated. Please log in.'
                 ], 401);
             }
 
-            \App\Models\AuditLog::create([
-                'user_id' => $user->id,
-                'action' => $request->action,
-                'details' => $request->details,
-            ]);
+            try {
+                \App\Models\AuditLog::create([
+                    'user_id' => $user->id,
+                    'action' => $request->action,
+                    'details' => $request->details,
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to create audit log: ' . $e->getMessage(), [
+                    'exception' => $e,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+                // Don't fail the request if logging fails
+                return response()->json([
+                    'message' => 'Log creation failed',
+                    'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+                ], 500);
+            }
 
             return response()->json(['message' => 'Log created'], 201);
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -127,7 +150,11 @@ Route::middleware('auth:sanctum')->group(function () {
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
-            \Log::error('Error in /logs: ' . $e->getMessage());
+            \Log::error('Error in /logs: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all(),
+            ]);
             return response()->json([
                 'message' => 'An error occurred while creating log.',
                 'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
