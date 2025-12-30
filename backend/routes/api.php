@@ -13,7 +13,13 @@ Route::get('/test', function () {
         'message' => 'API is working',
         'timestamp' => now()->toDateTimeString(),
         'php_version' => PHP_VERSION,
+        'laravel_version' => app()->version(),
     ]);
+});
+
+// Very simple test endpoint (no Laravel dependencies)
+Route::get('/ping', function () {
+    return response()->json(['pong' => true]);
 });
 
 // Health check endpoint to test database connection

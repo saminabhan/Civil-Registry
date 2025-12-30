@@ -22,8 +22,7 @@ class AdminUserSeeder extends Seeder
             $this->command->info('Admin user already exists. Updating password...');
             $admin->update([
                 'password' => Hash::make('Admin.IDAP2025'),
-                'is_admin' => true,
-                'is_active' => true,
+                'is_admin' => true,                'is_active' => true,
             ]);
         } else {
             User::create([

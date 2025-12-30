@@ -88,20 +88,52 @@ php artisan view:clear
 - json
 - xml
 
-### 8. اختبار الـ API
+### 8. التحقق من DocumentRoot في Apache/Nginx
+
+**لـ Apache (.htaccess):**
+تأكد من أن DocumentRoot يشير إلى:
+```
+/home/username/public_html/backend/public
+```
+أو
+```
+/var/www/html/backend/public
+```
+
+**لـ cPanel:**
+- DocumentRoot يجب أن يكون: `public_html/backend/public`
+- أو استخدم subdomain وأشر إلى `backend/public`
+
+### 9. اختبار الـ API
+
+**اختبار بسيط (ping):**
 افتح في المتصفح:
+```
+https://idap.infinet.ps/api/ping
+```
+يجب أن ترى:
+```json
+{"pong": true}
+```
+
+**اختبار كامل:**
 ```
 https://idap.infinet.ps/api/test
 ```
-
 يجب أن ترى:
 ```json
 {
   "message": "API is working",
   "timestamp": "...",
-  "php_version": "..."
+  "php_version": "...",
+  "laravel_version": "..."
 }
 ```
+
+**إذا رأيت HTML 500 error:**
+- المشكلة في إعدادات الـ web server
+- DocumentRoot غير صحيح
+- الـ .htaccess لا يعمل
 
 ### 9. التحقق من قاعدة البيانات
 ```
