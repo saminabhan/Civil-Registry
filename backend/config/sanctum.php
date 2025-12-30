@@ -28,6 +28,7 @@ return [
             '127.0.0.1:5173',
             '127.0.0.1:8000',
             'civil.infinet.ps',
+            'idap.infinet.ps',
             '*.infinet.ps',
         ],
         [Sanctum::currentApplicationUrlWithPort()]
