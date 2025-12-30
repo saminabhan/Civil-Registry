@@ -18,9 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\HandleCors::class,
         ]);
         
-        // Configure Sanctum to use token-based authentication (Bearer tokens)
-        // Remove statefulApi() to use stateless token authentication
-        // $middleware->statefulApi();
+        // Configure Sanctum to use stateless API authentication
+        $middleware->statefulApi();
         
         // Disable CSRF for API routes
         $middleware->validateCsrfTokens(except: [
