@@ -13,6 +13,14 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
+        // Debug: Log authentication info
+        \Log::info('UserController@index called', [
+            'has_user' => $request->user() !== null,
+            'user_id' => $request->user()?->id,
+            'has_auth_header' => $request->hasHeader('Authorization'),
+            'auth_header_present' => $request->header('Authorization') ? 'yes' : 'no',
+        ]);
+        
         $perPage = 15;
         $page = $request->get('page', 1);
         

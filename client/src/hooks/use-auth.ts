@@ -95,6 +95,9 @@ export function useAuth() {
         const { token, user } = data;
         if (token) {
           localStorage.setItem("token", token);
+          console.log('[Auth] Token saved to localStorage:', token.substring(0, 20) + '...');
+        } else {
+          console.warn('[Auth] No token received from backend!');
         }
         
         return api.auth.login.responses[200].parse(user);
