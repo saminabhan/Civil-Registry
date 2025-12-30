@@ -66,12 +66,27 @@ export function useAuth() {
           credentials: "include",
         });
         
+        // Check if response is JSON
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          const text = await res.text();
+          console.error("Non-JSON response:", text.substring(0, 200));
+          
+          if (res.status === 500) {
+            throw new Error("خطأ في الخادم. يرجى المحاولة لاحقاً أو الاتصال بالمسؤول.");
+          }
+          
+          throw new Error("حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.");
+        }
+        
         const data = await res.json();
         console.log("Login response:", { status: res.status, data });
         
         if (!res.ok) {
           const errorMessage = data?.message || (res.status === 401 
             ? "اسم المستخدم أو كلمة المرور غير صحيحة" 
+            : res.status === 500
+            ? "خطأ في الخادم. يرجى المحاولة لاحقاً."
             : "حدث خطأ أثناء تسجيل الدخول");
           throw new Error(errorMessage);
         }
@@ -85,7 +100,14 @@ export function useAuth() {
         return api.auth.login.responses[200].parse(user);
       } catch (error: any) {
         console.error("Login mutation error:", error);
-        throw error;
+        
+        // If it's already an Error with a message, throw it as is
+        if (error instanceof Error) {
+          throw error;
+        }
+        
+        // Otherwise, create a generic error
+        throw new Error(error?.message || "حدث خطأ أثناء تسجيل الدخول");
       }
     },
     onSuccess: (user) => {
