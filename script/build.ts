@@ -65,7 +65,7 @@ async function buildAll() {
         await mkdir(tempDir, { recursive: true });
         await copyDir(apiProxyPath, join(tempDir, "api"));
         savedApiFiles = true;
-        console.log("Saved API proxy files");
+        console.log("Saved API proxy files (including test-path.php)");
       }
     } catch (e) {
       // API proxy doesn't exist, skip

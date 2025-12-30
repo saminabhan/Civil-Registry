@@ -1,0 +1,16 @@
+         ذ<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Redirect all /api/* requests to api/index.php proxy
+    # The proxy will forward to Laravel backend
+    RewriteCond %{REQUEST_URI} ^/api
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^api/(.*)$ api/index.php [L,QSA]
+
+    # For all other requests, serve the frontend
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.html [L]
+</IfModule>
+
