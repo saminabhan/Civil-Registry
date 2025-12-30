@@ -15,13 +15,25 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        User::create([
-            'username' => 'admin',
-            'name' => 'System Admin',
-            'password' => Hash::make('Admin.IDAP2025'),
-            'is_admin' => true,
-            'is_active' => true,
-        ]);
+        // Check if admin user already exists
+        $admin = User::where('username', 'admin')->first();
         
+        if ($admin) {
+            $this->command->info('Admin user already exists. Updating password...');
+            $admin->update([
+                'password' => Hash::make('Admin.IDAP2025'),
+                'is_admin' => true,
+                'is_active' => true,
+            ]);
+        } else {
+            User::create([
+                'username' => 'admin',
+                'name' => 'System Admin',
+                'password' => Hash::make('Admin.IDAP2025'),
+                'is_admin' => true,
+                'is_active' => true,
+            ]);
+            $this->command->info('Admin user created successfully!');
+        }
     }
 }
