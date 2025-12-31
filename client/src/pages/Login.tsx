@@ -54,7 +54,7 @@ export default function Login() {
             <div className="inline-flex md:hidden items-center justify-center w-12 h-12 bg-primary/10 rounded-xl text-primary mb-4">
               <LayoutDashboard className="w-6 h-6" />
             </div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">تست</h1>
+            <h1 className="text-3xl font-bold text-foreground mb-2">تسجيل الدخول</h1>
             <p className="text-muted-foreground">أدخل بياناتك للوصول إلى النظام</p>
           </div>
 
