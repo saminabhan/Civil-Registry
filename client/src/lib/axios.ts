@@ -1,5 +1,6 @@
 import axios from "axios";
 import { getApiBaseUrl } from "./api-config";
+import { updateLastActivity, isSessionExpired, clearSession } from "./session";
 
 const api = axios.create({
   // baseURL will be set dynamically in interceptor
@@ -11,10 +12,18 @@ api.interceptors.request.use((config) => {
     config.baseURL = getApiBaseUrl();
   }
   
+  // Check if session has expired before making the request
+  if (isSessionExpired()) {
+    clearSession();
+    return Promise.reject(new Error('Session expired'));
+  }
+  
   // Add authorization token
   const token = localStorage.getItem("token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+    // Update last activity on each request to renew session
+    updateLastActivity();
     // Debug: Log token presence (first 20 chars only for security)
     console.log('[API] Token found, adding to request:', token.substring(0, 20) + '...');
   } else {
@@ -24,7 +33,7 @@ api.interceptors.request.use((config) => {
   
   // Ensure headers object exists
   if (!config.headers) {
-    config.headers = {};
+    config.headers = {} as any;
   }
   
   // Set content type if not set
@@ -36,8 +45,20 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Update last activity on successful response
+    updateLastActivity();
+    return response;
+  },
   (error) => {
+    // Handle 401 errors (unauthorized)
+    if (error.response?.status === 401) {
+      clearSession();
+      // Optionally redirect to login page
+      if (window.location.pathname !== '/') {
+        window.location.href = '/';
+      }
+    }
     // Return error with response data for better error handling
     return Promise.reject(error);
   }

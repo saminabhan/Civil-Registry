@@ -18,23 +18,28 @@ function normalizeArabic(text: string | null | undefined): string {
 
 // API Response Types
 interface ExternalCitizenData {
-  ID: number;
-  FNAME: string;
-  SNAME: string;
-  TNAME: string;
-  LNAME: string;
+  CI_ID_NUM: number;
+  CI_FIRST_ARB: string;
+  CI_FATHER_ARB: string;
+  CI_GRAND_FATHER_ARB: string;
+  CI_FAMILY_ARB: string;
+  CI_MOTHER_ARB: string;
   FULL_NAME: string;
-  SEX: string;
-  GENDER: number;
-  BDATE: string;
-  AGE: number;
-  SOCIALST: string;
-  SOCIAL_STATUS: number;
-  F_ID: number | null;
-  M_ID: string;
-  REGION: string;
-  CITY: string;
-  MO_ID: number;
+  CI_BIRTH_DT: string;
+  CI_SEX_CD: number;
+  CI_SEX_CD_NAME: string;
+  CI_PERSONAL_CD: number;
+  CI_PERSONAL_CD_NAME: string;
+  CI_RELIGION_CD: number;
+  CI_RELIGION_CD_NAME: string;
+  CI_REGION_CD: number;
+  CI_REGION_CD_NAME: string;
+  CI_CITY_CD: number;
+  CI_QUARTER: number;
+  CI_HOUSE_NO: number;
+  CI_STREET_ARB: string;
+  CI_DEAD_DT: string | null;
+  CI_DEAD_DT_NAME: string;
 }
 
 interface ExternalApiResponse {
@@ -45,25 +50,77 @@ interface ExternalApiResponse {
   ErrorDetail: any;
 }
 
+// Calculate age from birth date (and death date if provided)
+function calculateAge(birthDate: string, deathDate: string | null = null): number {
+  if (!birthDate) return 0;
+  
+  try {
+    // Parse birth date from "YYYY-MM-DD HH:mm:ss" format
+    const birthDateStr = birthDate.split(' ')[0]; // "1989-10-25"
+    const birthDateParts = birthDateStr.split('-');
+    
+    if (birthDateParts.length === 3) {
+      const birthYear = parseInt(birthDateParts[0], 10);
+      const birthMonth = parseInt(birthDateParts[1], 10) - 1; // JS Date months are 0-indexed
+      const birthDay = parseInt(birthDateParts[2], 10);
+      
+      const birthDateObj = new Date(birthYear, birthMonth, birthDay);
+      
+      // Use death date if provided, otherwise use today
+      let endDate: Date;
+      if (deathDate) {
+        const deathDateStr = deathDate.split(' ')[0];
+        const deathDateParts = deathDateStr.split('-');
+        if (deathDateParts.length === 3) {
+          const deathYear = parseInt(deathDateParts[0], 10);
+          const deathMonth = parseInt(deathDateParts[1], 10) - 1;
+          const deathDay = parseInt(deathDateParts[2], 10);
+          endDate = new Date(deathYear, deathMonth, deathDay);
+        } else {
+          endDate = new Date();
+        }
+      } else {
+        endDate = new Date();
+      }
+      
+      if (!isNaN(birthDateObj.getTime()) && !isNaN(endDate.getTime())) {
+        let age = endDate.getFullYear() - birthDateObj.getFullYear();
+        const monthDiff = endDate.getMonth() - birthDateObj.getMonth();
+        
+        // If birthday hasn't occurred this year yet, subtract one year
+        if (monthDiff < 0 || (monthDiff === 0 && endDate.getDate() < birthDateObj.getDate())) {
+          age--;
+        }
+        
+        return age;
+      }
+    }
+  } catch (error) {
+    // If calculation fails, return 0
+  }
+  
+  return 0;
+}
+
 // Convert external API data to internal format
 function convertExternalCitizen(data: ExternalCitizenData) {
-  // Remove time from date (format: "9/6/2003 0:00:00" -> "9/6/2003")
+  // Remove time from date (format: "1989-10-25 00:00:00" -> "1989-10-25")
   let dateOnly = null;
   let dobISO = null;
   
-  if (data.BDATE) {
-    dateOnly = data.BDATE.split(' ')[0]; // "9/6/2003"
+  if (data.CI_BIRTH_DT) {
+    dateOnly = data.CI_BIRTH_DT.split(' ')[0]; // "1989-10-25"
     
-    // Convert date from "M/D/YYYY" to ISO format safely
+    // Convert date from "YYYY-MM-DD" to ISO format safely
     try {
-      const dateParts = dateOnly.split('/');
+      const dateParts = dateOnly.split('-');
       if (dateParts.length === 3) {
-        const month = parseInt(dateParts[0], 10);
-        const day = parseInt(dateParts[1], 10);
-        const year = parseInt(dateParts[2], 10);
+        const year = parseInt(dateParts[0], 10);
+        const month = parseInt(dateParts[1], 10) - 1; // JS Date months are 0-indexed
+        const day = parseInt(dateParts[2], 10);
         
-        // Create date object (month is 0-indexed in JS Date)
-        const dateObj = new Date(year, month - 1, day);
+        // Create date object
+        const dateObj = new Date(year, month, day);
         
         // Check if date is valid
         if (!isNaN(dateObj.getTime())) {
@@ -76,28 +133,69 @@ function convertExternalCitizen(data: ExternalCitizenData) {
     }
   }
   
+  // Process death date
+  let deathDateOnly = null;
+  let deathDateISO = null;
+  const isDead = data.CI_DEAD_DT !== null && data.CI_DEAD_DT !== undefined && data.CI_DEAD_DT !== '';
+  
+  if (isDead && data.CI_DEAD_DT) {
+    deathDateOnly = data.CI_DEAD_DT.split(' ')[0]; // "2003-06-09"
+    
+    // Convert death date to ISO format
+    try {
+      const dateParts = deathDateOnly.split('-');
+      if (dateParts.length === 3) {
+        const year = parseInt(dateParts[0], 10);
+        const month = parseInt(dateParts[1], 10) - 1;
+        const day = parseInt(dateParts[2], 10);
+        
+        const dateObj = new Date(year, month, day);
+        if (!isNaN(dateObj.getTime())) {
+          deathDateISO = dateObj.toISOString();
+        }
+      }
+    } catch (error) {
+      // Silently handle date conversion errors
+    }
+  }
+  
+  // Calculate age - use death date if dead, otherwise use current age
+  const age = calculateAge(data.CI_BIRTH_DT, data.CI_DEAD_DT);
+  
+  // Build address from available fields
+  const addressParts: string[] = [];
+  if (data.CI_STREET_ARB) addressParts.push(data.CI_STREET_ARB);
+  if (data.CI_QUARTER) addressParts.push(`حي ${data.CI_QUARTER}`);
+  if (data.CI_HOUSE_NO) addressParts.push(`رقم ${data.CI_HOUSE_NO}`);
+  if (data.CI_REGION_CD_NAME) addressParts.push(data.CI_REGION_CD_NAME);
+  const address = addressParts.length > 0 ? addressParts.join(', ') : '';
+  
   return {
-    id: data.ID,
-    nationalId: data.ID.toString(),
-    firstName: data.FNAME,
-    fatherName: data.SNAME,
-    grandfatherName: data.TNAME,
-    lastName: data.LNAME,
+    id: data.CI_ID_NUM,
+    nationalId: data.CI_ID_NUM.toString(),
+    firstName: data.CI_FIRST_ARB,
+    fatherName: data.CI_FATHER_ARB,
+    grandfatherName: data.CI_GRAND_FATHER_ARB,
+    lastName: data.CI_FAMILY_ARB,
     fullName: data.FULL_NAME,
-    gender: data.SEX === "ذكر" ? "male" : "female",
-    genderText: data.SEX,
+    gender: data.CI_SEX_CD_NAME === "ذكر" ? "male" : "female",
+    genderText: data.CI_SEX_CD_NAME,
     dob: dobISO,
     dobText: dateOnly,
-    age: data.AGE,
-    socialStatus: data.SOCIALST,
-    socialStatusCode: data.SOCIAL_STATUS,
-    fatherId: data.F_ID,
-    motherId: data.M_ID,
-    region: data.REGION,
-    city: data.CITY,
-    motherIdNumber: data.MO_ID,
-    address: `${data.CITY}, ${data.REGION}`,
-    motherName: null, // Not available in API
+    age: age,
+    socialStatus: data.CI_PERSONAL_CD_NAME,
+    socialStatusCode: data.CI_PERSONAL_CD,
+    fatherId: null, // Not available in new API
+    motherId: null, // Not available in new API
+    region: data.CI_REGION_CD_NAME,
+    city: null, // CI_CITY_CD is a number, city name not directly available
+    motherIdNumber: null, // Not available in new API
+    address: address,
+    motherName: data.CI_MOTHER_ARB,
+    isDead: isDead,
+    deathStatus: data.CI_DEAD_DT_NAME || (isDead ? "متوفي" : "حي"),
+    deathDate: deathDateISO,
+    deathDateText: deathDateOnly,
   };
 }
 
@@ -132,7 +230,7 @@ export function useSearchCitizens(params?: Record<string, any>) {
         try {
           const id = String(params.nationalId).trim();
           const apiResponse = await axios.get<ExternalApiResponse>(
-            `${EXTERNAL_API_BASE_URL}/Users/by-id/${id}`
+            `${EXTERNAL_API_BASE_URL}/Users/by-id2019/${id}`
           );
           response = apiResponse.data;
           
@@ -230,7 +328,7 @@ export function useSearchCitizens(params?: Record<string, any>) {
           }
           
           // Build URL with query parameters manually to ensure proper encoding
-          const url = new URL(`${EXTERNAL_API_BASE_URL}/Users/by-name`);
+          const url = new URL(`${EXTERNAL_API_BASE_URL}/Users/by-name2019`);
           Object.entries(queryParams).forEach(([key, value]) => {
             if (value && value.trim().length > 0) {
               url.searchParams.append(key, value);

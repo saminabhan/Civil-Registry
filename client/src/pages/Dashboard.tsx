@@ -205,6 +205,13 @@ export default function Dashboard() {
                           <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">
                             {citizen.genderText || (citizen.gender === 'male' ? 'ذكر' : 'أنثى')}
                           </span>
+                          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                            citizen.isDead 
+                              ? 'bg-red-100 text-red-700' 
+                              : 'bg-green-100 text-green-700'
+                          }`}>
+                            {citizen.deathStatus || (citizen.isDead ? 'متوفي' : 'حي')}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -212,9 +219,11 @@ export default function Dashboard() {
                     {/* Middle Column - Personal Info */}
                     <div className="space-y-2">
                       <div className="grid grid-cols-2 gap-3">
-                        {citizen.age && (
+                        {citizen.age !== undefined && citizen.age !== null && (
                           <div>
-                            <p className="text-xs text-muted-foreground mb-1">العمر</p>
+                            <p className="text-xs text-muted-foreground mb-1">
+                              {citizen.isDead ? 'العمر عند الوفاة' : 'العمر'}
+                            </p>
                             <p className="font-medium text-sm">{citizen.age} سنة</p>
                           </div>
                         )}
@@ -222,6 +231,12 @@ export default function Dashboard() {
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">تاريخ الميلاد</p>
                             <p className="font-medium text-sm">{citizen.dobText}</p>
+                          </div>
+                        )}
+                        {citizen.isDead && citizen.deathDateText && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">تاريخ الوفاة</p>
+                            <p className="font-medium text-sm text-red-600">{citizen.deathDateText}</p>
                           </div>
                         )}
                         {citizen.socialStatus && (

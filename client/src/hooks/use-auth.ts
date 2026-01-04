@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type LoginRequest } from "@shared/routes";
 import { useLocation } from "wouter";
 import { getApiBaseUrl } from "@/lib/api-config";
+import { updateLastActivity, isSessionExpired, clearSession, initSession } from "@/lib/session";
 
 export function useAuth() {
   const queryClient = useQueryClient();
@@ -16,6 +17,15 @@ export function useAuth() {
       if (!token) {
         return null;
       }
+
+      // Check if session has expired
+      if (isSessionExpired()) {
+        clearSession();
+        return null;
+      }
+
+      // Update last activity on each request
+      updateLastActivity();
       
       const headers: HeadersInit = {
         'Authorization': `Bearer ${token}`,
@@ -31,7 +41,7 @@ export function useAuth() {
         
         if (res.status === 401) {
           // Token is invalid, remove it
-          localStorage.removeItem("token");
+          clearSession();
           return null;
         }
         
@@ -46,7 +56,7 @@ export function useAuth() {
         console.error('Error in userQuery:', error);
         // If it's a network error or 500, don't remove token
         if (error.message?.includes('401') || error.message?.includes('Unauthenticated')) {
-          localStorage.removeItem("token");
+          clearSession();
         }
         throw error;
       }
@@ -59,6 +69,9 @@ export function useAuth() {
       console.log("Attempting login with credentials:", { username: credentials.username });
       
       try {
+        // Update activity when attempting login
+        updateLastActivity();
+        
         const res = await fetch(`${getApiBaseUrl()}${api.auth.login.path}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -96,6 +109,8 @@ export function useAuth() {
         if (token) {
           localStorage.setItem("token", token);
           console.log('[Auth] Token saved to localStorage:', token.substring(0, 20) + '...');
+          // Initialize session tracking
+          initSession();
         } else {
           console.warn('[Auth] No token received from backend!');
         }
@@ -127,13 +142,21 @@ export function useAuth() {
         headers.Authorization = `Bearer ${token}`;
       }
       
-      await fetch(`${getApiBaseUrl()}${api.auth.logout.path}`, { 
-        method: "POST",
-        headers,
-        credentials: "include" 
-      });
-      
-      localStorage.removeItem("token");
+      try {
+        // Update activity before logout
+        updateLastActivity();
+        
+        await fetch(`${getApiBaseUrl()}${api.auth.logout.path}`, { 
+          method: "POST",
+          headers,
+          credentials: "include" 
+        });
+      } catch (error) {
+        // Ignore errors during logout
+        console.error('Logout error:', error);
+      } finally {
+        clearSession();
+      }
     },
     onSuccess: () => {
       queryClient.setQueryData([api.auth.me.path], null);

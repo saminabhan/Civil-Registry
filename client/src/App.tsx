@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/use-auth";
 import { usePageTracking } from "@/hooks/use-logs";
 import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
+import { updateLastActivity, isSessionExpired, clearSession } from "@/lib/session";
 
 // Pages
 import Login from "@/pages/Login";
@@ -52,6 +54,46 @@ function ProtectedRoute({ component: Component, adminOnly = false }: { component
 function Router() {
   // Global page tracking for logs
   usePageTracking();
+  
+  // Session management: track user activity and check for expiration
+  useEffect(() => {
+    // Events that indicate user activity
+    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    
+    const handleActivity = () => {
+      // Only update if user is logged in
+      if (localStorage.getItem("token")) {
+        updateLastActivity();
+      }
+    };
+    
+    // Check session expiration periodically (every minute)
+    const checkSessionInterval = setInterval(() => {
+      if (localStorage.getItem("token") && isSessionExpired()) {
+        clearSession();
+        // Redirect to login if not already there
+        if (window.location.pathname !== '/') {
+          window.location.href = '/';
+        }
+      }
+    }, 60000); // Check every minute
+    
+    // Add event listeners for user activity
+    activityEvents.forEach(event => {
+      document.addEventListener(event, handleActivity, { passive: true });
+    });
+    
+    // Initial activity update
+    handleActivity();
+    
+    return () => {
+      // Cleanup: remove event listeners
+      activityEvents.forEach(event => {
+        document.removeEventListener(event, handleActivity);
+      });
+      clearInterval(checkSessionInterval);
+    };
+  }, []);
 
   return (
     <Switch>
