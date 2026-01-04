@@ -1,0 +1,21 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Handle Authorization Header - CRITICAL for Bearer token authentication
+    # Apache doesn't pass Authorization header to PHP by default
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Redirect all /api/* requests to api/index.php proxy
+    # The proxy will forward to Laravel backend
+    RewriteCond %{REQUEST_URI} ^/api
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^api/(.*)$ api/index.php [L,QSA,E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # For all other requests, serve the frontend
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.html [L]
+</IfModule>
+

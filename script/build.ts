@@ -49,46 +49,6 @@ async function copyDir(src: string, dest: string) {
 }
 
 async function buildAll() {
-  // Save API proxy files before deleting dist
-  const apiProxyPath = "dist/public/api";
-  const htaccessPath = "dist/public/.htaccess";
-  const tempDir = ".build-temp";
-  
-  let savedApiFiles = false;
-  let savedHtaccess = false;
-  
-  try {
-    // Check if API proxy exists and save it
-    try {
-      const apiStat = await stat(apiProxyPath);
-      if (apiStat.isDirectory()) {
-        await mkdir(tempDir, { recursive: true });
-        await copyDir(apiProxyPath, join(tempDir, "api"));
-        savedApiFiles = true;
-        console.log("Saved API proxy files (including test-path.php)");
-      }
-    } catch (e) {
-      // API proxy doesn't exist, skip
-    }
-    
-    // Check if .htaccess exists and save it
-    try {
-      const htaccessStat = await stat(htaccessPath);
-      if (htaccessStat.isFile()) {
-        if (!savedApiFiles) {
-          await mkdir(tempDir, { recursive: true });
-        }
-        await copyFile(htaccessPath, join(tempDir, ".htaccess"));
-        savedHtaccess = true;
-        console.log("Saved .htaccess file");
-      }
-    } catch (e) {
-      // .htaccess doesn't exist, skip
-    }
-  } catch (e) {
-    console.warn("Could not save API proxy files:", e);
-  }
-  
   await rm("dist", { recursive: true, force: true });
 
   console.log("building client...");
@@ -116,26 +76,38 @@ async function buildAll() {
     logLevel: "info",
   });
   
-  // Restore API proxy files after build
-  if (savedApiFiles || savedHtaccess) {
+  // Copy API proxy files and .htaccess from source to dist
+  const sourceApiPath = "public/api";
+  const sourceHtaccessPath = "public/.htaccess";
+  const distApiPath = "dist/public/api";
+  const distHtaccessPath = "dist/public/.htaccess";
+  
+  try {
+    // Copy API proxy files
     try {
-      await mkdir("dist/public", { recursive: true });
-      
-      if (savedApiFiles) {
-        await copyDir(join(tempDir, "api"), apiProxyPath);
-        console.log("Restored API proxy files");
+      const apiStat = await stat(sourceApiPath);
+      if (apiStat.isDirectory()) {
+        await mkdir(distApiPath, { recursive: true });
+        await copyDir(sourceApiPath, distApiPath);
+        console.log("Copied API proxy files from source");
       }
-      
-      if (savedHtaccess) {
-        await copyFile(join(tempDir, ".htaccess"), htaccessPath);
-        console.log("Restored .htaccess file");
-      }
-      
-      // Clean up temp directory
-      await rm(tempDir, { recursive: true, force: true });
     } catch (e) {
-      console.warn("Could not restore API proxy files:", e);
+      console.warn("API proxy directory not found in source, skipping...");
     }
+    
+    // Copy .htaccess file
+    try {
+      const htaccessStat = await stat(sourceHtaccessPath);
+      if (htaccessStat.isFile()) {
+        await mkdir("dist/public", { recursive: true });
+        await copyFile(sourceHtaccessPath, distHtaccessPath);
+        console.log("Copied .htaccess file from source");
+      }
+    } catch (e) {
+      console.warn(".htaccess file not found in source, skipping...");
+    }
+  } catch (e) {
+    console.warn("Could not copy API proxy files:", e);
   }
 }
 

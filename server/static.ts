@@ -6,16 +6,29 @@ import { execSync } from "child_process";
 let buildChecked = false;
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(__dirname, "public");
+  // Try multiple possible paths for dist/public
+  // In compiled code, __dirname will be the directory where dist/index.cjs is located
+  const possiblePaths = [
+    path.resolve(__dirname, "public"), // Standard case: dist/public
+    path.resolve(process.cwd(), "dist", "public"), // Fallback: from project root
+    path.resolve(__dirname, "..", "public"), // Alternative structure
+  ];
+
+  let distPath: string | null = null;
   
-  // Auto-build if dist doesn't exist (only once to avoid multiple builds)
-  if (!buildChecked && !fs.existsSync(distPath)) {
+  // Find the first existing path
+  for (const possiblePath of possiblePaths) {
+    if (fs.existsSync(possiblePath) && fs.existsSync(path.resolve(possiblePath, "index.html"))) {
+      distPath = possiblePath;
+      break;
+    }
+  }
+
+  // If no dist found, try to build (only once)
+  if (!distPath && !buildChecked) {
     buildChecked = true;
     console.warn("⚠️  Build directory not found. Attempting to build...");
     try {
-      // Get the project root directory
-      // __dirname will be dist/ in compiled code, so we go up one level
-      // But we should use process.cwd() which is more reliable
       const projectRoot = process.cwd();
       console.log(`Building from: ${projectRoot}`);
       execSync("npm run build", {
@@ -24,17 +37,25 @@ export function serveStatic(app: Express) {
         env: { ...process.env, NODE_ENV: "production" },
       });
       console.log("✅ Build completed successfully!");
+      
+      // Try to find dist again after build
+      for (const possiblePath of possiblePaths) {
+        if (fs.existsSync(possiblePath) && fs.existsSync(path.resolve(possiblePath, "index.html"))) {
+          distPath = possiblePath;
+          break;
+        }
+      }
     } catch (error) {
       console.error("❌ Auto-build failed. Please run 'npm run build' manually.");
       throw new Error(
-        `Could not find the build directory: ${distPath}, and auto-build failed. Please run 'npm run build' first.`,
+        `Could not find the build directory and auto-build failed. Please run 'npm run build' first.`,
       );
     }
   }
   
-  if (!fs.existsSync(distPath)) {
+  if (!distPath || !fs.existsSync(distPath)) {
     throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`,
+      `Could not find the build directory (dist/public). Please run 'npm run build' first.`,
     );
   }
 
@@ -42,6 +63,6 @@ export function serveStatic(app: Express) {
 
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+    res.sendFile(path.resolve(distPath!, "index.html"));
   });
 }

@@ -1,144 +1,35 @@
-# تعليمات النشر على السيرفر
+# تعليمات النشر (Deployment Instructions)
 
-## الهيكل المطلوب على السيرفر
+## البناء التلقائي
 
-```
-/public_html/Civil-Registry/
-├── backend/          (Laravel API)
-│   ├── public/
-│   │   ├── index.php
-│   │   └── .htaccess
-│   ├── app/
-│   ├── config/
-│   ├── routes/
-│   └── ...
-├── dist/             (Frontend Build)
-│   └── public/
-│       ├── index.html
-│       ├── .htaccess  (يجب رفعه!)
-│       └── assets/
-└── client/           (Source code - غير مطلوب على السيرفر)
-```
+المشروع الآن يحتوي على نظام بناء تلقائي. **لا حاجة لحذف dist أو رفعه يدوياً بعد الآن!**
 
-## إعداد cPanel
+## كيفية العمل:
 
-### 1. إعداد Subdomain
-
-في cPanel → Subdomains:
-- **Subdomain**: `idap`
-- **Domain**: `infinet.ps`
-- **Document Root**: `/public_html/Civil-Registry/dist/public`
-
-### 2. رفع الملفات
-
-**ملفات Backend:**
-```
-backend/
-├── app/
-├── bootstrap/
-├── config/
-├── database/
-├── public/
-├── routes/
-├── storage/
-├── vendor/
-├── .env
-├── artisan
-└── composer.json
-```
-
-**ملفات Frontend:**
-```
-dist/public/
-├── index.html
-├── .htaccess  (مهم جداً!)
-├── api/
-│   └── index.php  (مهم جداً! - API Proxy)
-├── assets/
-└── favicon.png
-```
-
-### 3. ملفات مهمة في dist/public
-
-**يجب رفع هذه الملفات:**
-```
-dist/public/.htaccess  - يعيد توجيه /api/* إلى api/index.php
-dist/public/api/index.php  - Proxy يعيد توجيه الطلبات إلى Laravel backend
-```
-
-هذه الملفات تعمل معاً لإعادة توجيه `/api/*` إلى `backend/public/index.php`
-
-### 4. إعدادات Backend
-
-**ملف .env في backend:**
-```env
-APP_NAME=Laravel
-APP_ENV=production
-APP_KEY=base64:+xAjT8d0NvCRbO+kyjx0x6DT4IpkWLtxSnbgrejBAO4=
-APP_DEBUG=false
-APP_URL=https://idap.infinet.ps
-
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=infinet_civil
-DB_USERNAME=infinet_civil
-DB_PASSWORD=M7TJWh8jJBMOiyOM
-
-SESSION_DRIVER=cookie
-SESSION_DOMAIN=.infinet.ps
-SANCTUM_STATEFUL_DOMAINS=idap.infinet.ps,*.infinet.ps
-```
-
-### 5. Permissions
+### 1. بعد عمل `git pull` على الخادم:
 
 ```bash
-cd /public_html/Civil-Registry/backend
-chmod -R 775 storage bootstrap/cache
-chown -R username:username storage bootstrap/cache
+git pull
+npm install  # سيتم البناء تلقائياً هنا (postinstall)
+npm start    # سيتم التحقق من البناء مرة أخرى (prestart)
 ```
 
-### 6. تشغيل Migrations
+### 2. إذا كان البناء التلقائي لم يعمل:
 
 ```bash
-cd /public_html/Civil-Registry/backend
-php artisan migrate --force
-php artisan db:seed --class=AdminUserSeeder
+npm run ensure-build  # للتحقق من البناء يدوياً
+# أو
+npm run build         # للبناء الكامل
 ```
 
-### 7. مسح Cache
+## الملفات المسؤولة:
 
-```bash
-cd /public_html/Civil-Registry/backend
-php artisan config:clear
-php artisan cache:clear
-php artisan route:clear
-php artisan view:clear
-```
+- `script/ensure-build.ts` - Script للتحقق من البناء التلقائي
+- `package.json` - يحتوي على `postinstall` و `prestart` hooks
+- `server/static.ts` - يحتوي على fallback للبناء التلقائي
 
-## الاختبار
+## ملاحظات:
 
-### 1. اختبار Frontend
-```
-https://idap.infinet.ps/
-```
-يجب أن ترى صفحة تسجيل الدخول
-
-### 2. اختبار API
-```
-https://idap.infinet.ps/api/ping
-```
-يجب أن ترى: `{"pong": true}`
-
-```
-https://idap.infinet.ps/api/test
-```
-يجب أن ترى معلومات عن الـ API
-
-## ملاحظات مهمة
-
-1. **ملف .htaccess في dist/public مهم جداً** - بدونها لن يعمل الـ API
-2. **DocumentRoot** يجب أن يشير إلى `dist/public` وليس `backend/public`
-3. **ملف .env** يجب أن يكون في مجلد `backend`
-4. **Permissions** مهمة جداً لـ `storage` و `bootstrap/cache`
-
+- ✅ مجلد `dist` لا يزال في `.gitignore` (صحيح - لا يجب push الملفات المبنية)
+- ✅ البناء يحدث تلقائياً عند الحاجة
+- ✅ كل التعديلات في الكود المصدري ستظهر بعد البناء التلقائي
