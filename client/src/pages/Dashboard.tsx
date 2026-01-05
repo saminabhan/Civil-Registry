@@ -9,6 +9,7 @@ export default function Dashboard() {
   const [registryYear, setRegistryYear] = useState<2019 | 2023>(2019);
   const [searchParams, setSearchParams] = useState<any>({});
   const [triggerSearch, setTriggerSearch] = useState(false);
+  const [searchCounter, setSearchCounter] = useState(0); // Counter to force re-fetch
   const [searchByNationalId, setSearchByNationalId] = useState(false);
   const [currentSearchNationalId, setCurrentSearchNationalId] = useState<string | null>(null);
   const [phoneData, setPhoneData] = useState<Record<string, PhoneApiData>>({});
@@ -82,6 +83,8 @@ export default function Dashboard() {
     
     setSearchParams(params);
     setTriggerSearch(true);
+    // Increment search counter to force re-fetch of phone data
+    setSearchCounter(prev => prev + 1);
   };
 
   const handleFetchPhoneData = async (nationalId: string) => {
@@ -124,7 +127,7 @@ export default function Dashboard() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [triggerSearch, currentSearchNationalId, results.length]);
+  }, [triggerSearch, currentSearchNationalId, results.length, searchCounter]);
 
   return (
     <div className="space-y-8" dir="rtl">
