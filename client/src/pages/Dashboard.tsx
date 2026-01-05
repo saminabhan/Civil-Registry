@@ -104,10 +104,8 @@ export default function Dashboard() {
     if (triggerSearch && searchByNationalId && results.length > 0 && currentSearchNationalId) {
       const citizen = results[0];
       // Always fetch phone data for the current search
-      // Use a unique key based on nationalId + triggerSearch to force re-fetch on every search
       if (citizen.nationalId === currentSearchNationalId) {
-        // Always clear and fetch - don't check if already exists
-        // This ensures fresh data on every search
+        // Clear existing data to force fresh fetch
         setPhoneData(prev => {
           const { [citizen.nationalId]: _, ...rest } = prev;
           return rest;
@@ -116,12 +114,17 @@ export default function Dashboard() {
           const { [citizen.nationalId]: _, ...rest } = prev;
           return rest;
         });
-        // Fetch phone data immediately
-        handleFetchPhoneData(citizen.nationalId);
+        
+        // Small delay to ensure state is cleared, then fetch
+        const timeoutId = setTimeout(() => {
+          handleFetchPhoneData(citizen.nationalId);
+        }, 100);
+        
+        return () => clearTimeout(timeoutId);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [triggerSearch, currentSearchNationalId]);
+  }, [triggerSearch, currentSearchNationalId, results.length]);
 
   return (
     <div className="space-y-8" dir="rtl">

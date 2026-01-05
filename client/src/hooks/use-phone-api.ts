@@ -64,7 +64,10 @@ export interface PhoneApiData {
 }
 
 // Fetch phone number and location data by national ID
-export async function fetchPhoneByNationalId(nationalId: string): Promise<PhoneApiData> {
+export async function fetchPhoneByNationalId(
+  nationalId: string, 
+  signal?: AbortSignal
+): Promise<PhoneApiData> {
   let token = getPhoneApiToken();
 
   // If no token, try to login first
@@ -81,12 +84,27 @@ export async function fetchPhoneByNationalId(nationalId: string): Promise<PhoneA
   }
 
   try {
+    // Create timeout controller (15 seconds timeout)
+    const timeoutController = new AbortController();
+    const timeoutId = setTimeout(() => timeoutController.abort(), 15000);
+    
+    // Use provided signal or create a new one, combine with timeout
+    const requestSignal = signal || new AbortController().signal;
+    const combinedController = new AbortController();
+    
+    // Listen to both signals
+    requestSignal.addEventListener('abort', () => combinedController.abort());
+    timeoutController.signal.addEventListener('abort', () => combinedController.abort());
+
     const response = await fetch(`${PHONE_API_URL}/fetch-by-id/${nationalId}`, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${token}`,
       },
+      signal: combinedController.signal,
     });
+    
+    clearTimeout(timeoutId);
 
     if (response.status === 401) {
       // Token expired, try to login again
@@ -94,13 +112,25 @@ export async function fetchPhoneByNationalId(nationalId: string): Promise<PhoneA
       const password = "moi1234455123";
       token = await loginToPhoneAPI(username, password);
       
-      // Retry the request
+      // Retry the request with timeout
+      const retryTimeoutController = new AbortController();
+      const retryTimeoutId = setTimeout(() => retryTimeoutController.abort(), 15000);
+      
+      const retryRequestSignal = signal || new AbortController().signal;
+      const retryCombinedController = new AbortController();
+      
+      retryRequestSignal.addEventListener('abort', () => retryCombinedController.abort());
+      retryTimeoutController.signal.addEventListener('abort', () => retryCombinedController.abort());
+      
       const retryResponse = await fetch(`${PHONE_API_URL}/fetch-by-id/${nationalId}`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
         },
+        signal: retryCombinedController.signal,
       });
+      
+      clearTimeout(retryTimeoutId);
 
       if (!retryResponse.ok) {
         throw new Error("فشل جلب رقم الهاتف");
@@ -116,7 +146,11 @@ export async function fetchPhoneByNationalId(nationalId: string): Promise<PhoneA
 
     const data = await response.json();
     return extractPhoneData(data);
-  } catch (error) {
+  } catch (error: any) {
+    // Handle abort errors gracefully
+    if (error.name === 'AbortError' || signal?.aborted) {
+      throw new Error("تم إلغاء الطلب");
+    }
     console.error("Error fetching phone data:", error);
     throw error;
   }
@@ -147,22 +181,49 @@ function extractPhoneData(data: any): PhoneApiData {
   return result;
 }
 
+// Store abort controllers globally to manage them across component re-renders
+const activeRequests = new Map<string, AbortController>();
+
 // Hook to use phone API
 export function usePhoneAPI() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const fetchPhoneData = async (nationalId: string): Promise<PhoneApiData> => {
+    // Cancel any existing request for this nationalId
+    const existingController = activeRequests.get(nationalId);
+    if (existingController && !existingController.signal.aborted) {
+      existingController.abort();
+    }
+    
+    // Create new abort controller for this request
+    const abortController = new AbortController();
+    activeRequests.set(nationalId, abortController);
+    
     setIsLoading(true);
     try {
-      const data = await fetchPhoneByNationalId(nationalId);
+      const data = await fetchPhoneByNationalId(nationalId, abortController.signal);
+      
+      // Remove controller on success (only if it's still the same request)
+      if (activeRequests.get(nationalId) === abortController) {
+        activeRequests.delete(nationalId);
+      }
+      
       return data;
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "خطأ في جلب البيانات",
-        description: error.message || "حدث خطأ أثناء جلب البيانات",
-      });
+      // Remove controller on error (only if it's still the same request)
+      if (activeRequests.get(nationalId) === abortController) {
+        activeRequests.delete(nationalId);
+      }
+      
+      // Don't show error toast for aborted requests or timeout
+      if (error.message !== "تم إلغاء الطلب" && error.name !== 'AbortError') {
+        toast({
+          variant: "destructive",
+          title: "خطأ في جلب البيانات",
+          description: error.message || "حدث خطأ أثناء جلب البيانات",
+        });
+      }
       return {
         mobile: null,
         city: null,
