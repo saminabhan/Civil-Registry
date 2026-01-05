@@ -1,16 +1,19 @@
 import { useState, useEffect } from "react";
 import { useSearchCitizens, useCreateCitizen } from "@/hooks/use-citizens";
-import { useAuth } from "@/hooks/use-auth";
-import { Search, Loader2, UserPlus, Info, AlertCircle } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useQueryClient } from "@tanstack/react-query";
+import { usePhoneAPI, type PhoneApiData } from "@/hooks/use-phone-api";
+import { Search, Loader2, Info, AlertCircle, Phone } from "lucide-react";
+import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<'name' | 'id'>('name');
   const [searchParams, setSearchParams] = useState<any>({});
   const [triggerSearch, setTriggerSearch] = useState(false);
+  const [searchByNationalId, setSearchByNationalId] = useState(false);
+  const [currentSearchNationalId, setCurrentSearchNationalId] = useState<string | null>(null);
+  const [phoneData, setPhoneData] = useState<Record<string, PhoneApiData>>({});
+  const [loadingPhones, setLoadingPhones] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
+  const { fetchPhoneData, isLoading: isPhoneAPILoading } = usePhoneAPI();
   
   const { data: searchResult, isLoading, error } = useSearchCitizens(triggerSearch ? searchParams : null);
   const results = searchResult?.citizens || [];
@@ -33,16 +36,27 @@ export default function Dashboard() {
     const formData = new FormData(e.target as HTMLFormElement);
     const params: any = {};
     
-    if (activeTab === 'name') {
-      const firstName = formData.get('firstName')?.toString().trim();
-      const lastName = formData.get('lastName')?.toString().trim();
-      
-      // Validate that firstName and lastName are provided
+    const nationalId = formData.get('nationalId')?.toString().trim();
+    const firstName = formData.get('firstName')?.toString().trim();
+    const lastName = formData.get('lastName')?.toString().trim();
+    
+    // Reset phone data for new search
+    setPhoneData({});
+    setLoadingPhones({});
+    setCurrentSearchNationalId(null);
+    
+    // If national ID is provided, search by ID only
+    if (nationalId) {
+      params.nationalId = nationalId;
+      setSearchByNationalId(true);
+      setCurrentSearchNationalId(nationalId);
+    } else {
+      // Otherwise, search by name
       if (!firstName || !lastName) {
         toast({
           variant: "destructive",
           title: "خطأ في الإدخال",
-          description: "الرجاء إدخال الاسم الأول واسم العائلة على الأقل",
+          description: "الرجاء إدخال رقم الهوية أو الاسم الأول واسم العائلة على الأقل",
         });
         return;
       }
@@ -51,22 +65,48 @@ export default function Dashboard() {
       params.lastName = lastName;
       params.fatherName = formData.get('fatherName')?.toString().trim();
       params.grandfatherName = formData.get('grandfatherName')?.toString().trim();
-    } else {
-      const nationalId = formData.get('nationalId')?.toString().trim();
-      if (!nationalId) {
-        toast({
-          variant: "destructive",
-          title: "خطأ في الإدخال",
-          description: "الرجاء إدخال رقم الهوية",
-        });
-        return;
-      }
-      params.nationalId = nationalId;
+      setSearchByNationalId(false);
     }
 
     setSearchParams(params);
     setTriggerSearch(true);
   };
+
+  const handleFetchPhoneData = async (nationalId: string) => {
+    // Don't fetch if already loading
+    if (loadingPhones[nationalId]) return;
+    
+    setLoadingPhones(prev => ({ ...prev, [nationalId]: true }));
+    
+    try {
+      const data = await fetchPhoneData(nationalId);
+      setPhoneData(prev => ({ ...prev, [nationalId]: data }));
+    } finally {
+      setLoadingPhones(prev => ({ ...prev, [nationalId]: false }));
+    }
+  };
+
+  // Fetch phone number automatically when searching by national ID
+  // Always fetch for new search to ensure fresh data
+  useEffect(() => {
+    if (triggerSearch && searchByNationalId && results.length > 0 && currentSearchNationalId) {
+      const citizen = results[0];
+      // Always fetch phone data for the current search
+      // Clear existing phone data first to show loading state
+      if (citizen.nationalId === currentSearchNationalId) {
+        // Remove from phoneData to force re-fetch
+        setPhoneData(prev => {
+          const { [citizen.nationalId]: _, ...rest } = prev;
+          return rest;
+        });
+        // Fetch phone data (will always fetch, even if we had cached data)
+        if (!loadingPhones[citizen.nationalId]) {
+          handleFetchPhoneData(citizen.nationalId);
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triggerSearch, searchByNationalId, currentSearchNationalId, results.length]);
 
   return (
     <div className="space-y-8" dir="rtl">
@@ -76,57 +116,22 @@ export default function Dashboard() {
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-border overflow-hidden">
-        <div className="flex border-b border-border">
-          <button
-            onClick={() => { setActiveTab('name'); setTriggerSearch(false); }}
-            className={`flex-1 py-4 text-center font-medium transition-colors ${
-              activeTab === 'name' 
-                ? 'bg-primary/5 text-primary border-b-2 border-primary' 
-                : 'text-muted-foreground hover:bg-muted/50'
-            }`}
-          >
-            بحث بالاسم
-          </button>
-          <button
-            onClick={() => { setActiveTab('id'); setTriggerSearch(false); }}
-            className={`flex-1 py-4 text-center font-medium transition-colors ${
-              activeTab === 'id' 
-                ? 'bg-primary/5 text-primary border-b-2 border-primary' 
-                : 'text-muted-foreground hover:bg-muted/50'
-            }`}
-          >
-            بحث برقم الهوية
-          </button>
-        </div>
-
         <div className="p-8 bg-muted/10">
           <form onSubmit={handleSearch} className="space-y-6">
-            <AnimatePresence mode="wait">
-              {activeTab === 'name' ? (
-                <motion.div
-                  key="name-search"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="grid grid-cols-1 md:grid-cols-4 gap-4"
-                >
-                  <InputGroup label="الاسم الأول" name="firstName" />
-                  <InputGroup label="اسم الأب" name="fatherName" />
-                  <InputGroup label="اسم الجد" name="grandfatherName" />
-                  <InputGroup label="اسم العائلة" name="lastName" />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="id-search"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="max-w-md mx-auto"
-                >
-                  <InputGroup label="رقم الهوية الوطنية" name="nationalId" />
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <div className="space-y-6">
+              {/* رقم الهوية في الأعلى */}
+              <div className="max-w-md">
+                <InputGroup label="رقم الهوية الوطنية" name="nationalId" />
+              </div>
+              
+              {/* حقول الأسماء */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <InputGroup label="الاسم الأول" name="firstName" />
+                <InputGroup label="اسم الأب" name="fatherName" />
+                <InputGroup label="اسم الجد" name="grandfatherName" />
+                <InputGroup label="اسم العائلة" name="lastName" />
+              </div>
+            </div>
 
             <div className="flex justify-center pt-4">
               <button
@@ -233,6 +238,13 @@ export default function Dashboard() {
                             <p className="font-medium text-sm">{citizen.dobText}</p>
                           </div>
                         )}
+                        {/* Phone Number in same row as Date of Birth */}
+                        {phoneData[citizen.nationalId]?.mobile && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">رقم الهاتف</p>
+                            <p className="font-medium text-sm text-primary">{phoneData[citizen.nationalId].mobile}</p>
+                          </div>
+                        )}
                         {citizen.isDead && citizen.deathDateText && (
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">تاريخ الوفاة</p>
@@ -262,6 +274,61 @@ export default function Dashboard() {
                           <p className="font-medium text-sm">{citizen.city}</p>
                         </div>
                       )}
+                      
+                      {/* Detailed Address Section */}
+                      <div className="pt-2 border-t border-border/50">
+                        {phoneData[citizen.nationalId] !== undefined ? (
+                          <>
+                            {phoneData[citizen.nationalId].governorate || 
+                             phoneData[citizen.nationalId].city || 
+                             phoneData[citizen.nationalId].area ? (
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-1">العنوان بالتفصيل</p>
+                                <p className="font-medium text-sm leading-relaxed">
+                                  {[
+                                    phoneData[citizen.nationalId].governorate,
+                                    phoneData[citizen.nationalId].city,
+                                    phoneData[citizen.nationalId].area
+                                  ].filter(Boolean).join(' - ')}
+                                </p>
+                              </div>
+                            ) : (
+                              <div>
+                                <p className="text-xs text-muted-foreground">البيانات غير متوفرة</p>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          !searchByNationalId && (
+                            <button
+                              onClick={() => handleFetchPhoneData(citizen.nationalId)}
+                              disabled={loadingPhones[citizen.nationalId] || isPhoneAPILoading}
+                              className="w-full flex flex-col items-center justify-center gap-1.5 px-4 py-3 text-xs font-medium text-primary bg-gradient-to-br from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 border border-primary/20 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                            >
+                              {loadingPhones[citizen.nationalId] || isPhoneAPILoading ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  <span>جاري الجلب...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="flex items-center gap-2">
+                                    <Phone className="w-4 h-4" />
+                                    <span className="font-semibold">جلب رقم الهاتف والموقع</span>
+                                  </div>
+                                  <span className="text-[10px] text-muted-foreground">اضغط لعرض التفاصيل</span>
+                                </>
+                              )}
+                            </button>
+                          )
+                        )}
+                        {searchByNationalId && loadingPhones[citizen.nationalId] && (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <span>جاري جلب البيانات...</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </motion.div>

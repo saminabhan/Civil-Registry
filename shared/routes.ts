@@ -45,6 +45,32 @@ export const api = {
         401: errorSchemas.unauthorized,
       },
     },
+    updateProfile: {
+      method: 'PUT' as const,
+      path: '/auth/profile',
+      input: z.object({
+        name: z.string().optional(),
+        username: z.string().optional(),
+      }),
+      responses: {
+        200: z.custom<typeof users.$inferSelect>(),
+        400: errorSchemas.validation,
+        401: errorSchemas.unauthorized,
+      },
+    },
+    updatePassword: {
+      method: 'PUT' as const,
+      path: '/auth/password',
+      input: z.object({
+        currentPassword: z.string(),
+        newPassword: z.string().min(6),
+      }),
+      responses: {
+        200: z.object({ message: z.string() }),
+        400: errorSchemas.validation,
+        401: errorSchemas.unauthorized,
+      },
+    },
   },
   users: {
     list: {

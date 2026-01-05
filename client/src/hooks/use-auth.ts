@@ -164,6 +164,61 @@ export function useAuth() {
     },
   });
 
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: { name?: string; username?: string }) => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("غير مصرح. يرجى تسجيل الدخول");
+      }
+
+      const res = await fetch(`${getApiBaseUrl()}${api.auth.updateProfile.path}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "فشل تحديث البيانات");
+      }
+
+      return api.auth.updateProfile.responses[200].parse(await res.json());
+    },
+    onSuccess: (user) => {
+      queryClient.setQueryData([api.auth.me.path], user);
+    },
+  });
+
+  const updatePasswordMutation = useMutation({
+    mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("غير مصرح. يرجى تسجيل الدخول");
+      }
+
+      const res = await fetch(`${getApiBaseUrl()}${api.auth.updatePassword.path}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "فشل تغيير كلمة المرور");
+      }
+
+      return api.auth.updatePassword.responses[200].parse(await res.json());
+    },
+  });
+
   return {
     user: userQuery.data,
     isLoading: userQuery.isLoading,
@@ -171,5 +226,11 @@ export function useAuth() {
     isLoggingIn: loginMutation.isPending,
     loginError: loginMutation.error,
     logout: logoutMutation.mutate,
+    updateProfile: updateProfileMutation.mutate,
+    isUpdatingProfile: updateProfileMutation.isPending,
+    updateProfileError: updateProfileMutation.error,
+    updatePassword: updatePasswordMutation.mutate,
+    isUpdatingPassword: updatePasswordMutation.isPending,
+    updatePasswordError: updatePasswordMutation.error,
   };
 }

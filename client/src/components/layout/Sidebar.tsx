@@ -7,7 +7,8 @@ import {
   LogOut, 
   LayoutDashboard,
   Menu,
-  X
+  X,
+  Settings
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -84,6 +85,10 @@ export function Sidebar() {
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
           <NavItem href="/dashboard" icon={Search}>
             بحث عن مواطن
+          </NavItem>
+          
+          <NavItem href="/settings" icon={Settings}>
+            الإعدادات
           </NavItem>
           
           {user?.isAdmin && (

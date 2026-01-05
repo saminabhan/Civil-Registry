@@ -14,6 +14,7 @@ import { z } from "zod";
 export const users = mysqlTable("users", {
   id: serial("id").primaryKey(),
   username: varchar("username", { length: 255 }).notNull().unique(),
+  name: varchar("name", { length: 255 }),
   password: varchar("password", { length: 255 }).notNull(),
   isAdmin: boolean("is_admin").notNull().default(false),
   isActive: boolean("is_active").notNull().default(true),

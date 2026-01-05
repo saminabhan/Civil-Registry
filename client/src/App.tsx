@@ -12,6 +12,7 @@ import { updateLastActivity, isSessionExpired, clearSession } from "@/lib/sessio
 // Pages
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
+import Settings from "@/pages/Settings";
 import Users from "@/pages/Users";
 import Logs from "@/pages/Logs";
 import AllLogs from "@/pages/AllLogs";
@@ -101,6 +102,10 @@ function Router() {
       
       <Route path="/dashboard">
         <ProtectedRoute component={Dashboard} />
+      </Route>
+      
+      <Route path="/settings">
+        <ProtectedRoute component={Settings} />
       </Route>
       
       <Route path="/users">
