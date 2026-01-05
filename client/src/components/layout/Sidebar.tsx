@@ -109,10 +109,10 @@ export function Sidebar() {
         <div className="p-4 border-t border-border/50 bg-muted/30">
           <div className="flex items-center gap-3 px-4 py-3 mb-2">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
-              {user?.username?.charAt(0).toUpperCase()}
+              {((user as any)?.name || user?.username)?.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 overflow-hidden">
-              <p className="font-semibold text-sm truncate">{user?.username}</p>
+              <p className="font-semibold text-sm truncate">{(user as any)?.name || user?.username}</p>
               <p className="text-xs text-muted-foreground capitalize">
                 {user?.isAdmin ? 'مسؤول النظام' : 'مستخدم'}
               </p>

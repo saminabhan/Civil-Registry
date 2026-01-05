@@ -50,6 +50,35 @@ interface ExternalApiResponse {
   ErrorDetail: any;
 }
 
+// API Response Types for 2023 Registry
+interface ExternalCitizenData2023 {
+  ID: number;
+  FNAME: string;
+  SNAME: string;
+  TNAME: string;
+  LNAME: string;
+  FULL_NAME: string;
+  SEX: string;
+  GENDER: number;
+  BDATE: string;
+  AGE: number;
+  SOCIALST: string;
+  SOCIAL_STATUS: number;
+  F_ID: number;
+  M_ID: string | number;
+  REGION: string;
+  CITY: string;
+  MO_ID: number;
+}
+
+interface ExternalApiResponse2023 {
+  Success: boolean;
+  Message: string;
+  ErrorCode: number;
+  Data: ExternalCitizenData2023 | ExternalCitizenData2023[];
+  ErrorDetail: any;
+}
+
 // Calculate age from birth date (and death date if provided)
 function calculateAge(birthDate: string, deathDate: string | null = null): number {
   if (!birthDate) return 0;
@@ -173,6 +202,7 @@ function convertExternalCitizen(data: ExternalCitizenData) {
   return {
     id: data.CI_ID_NUM,
     nationalId: data.CI_ID_NUM.toString(),
+    registryYear: 2019, // Mark as 2019 registry
     firstName: data.CI_FIRST_ARB,
     fatherName: data.CI_FATHER_ARB,
     grandfatherName: data.CI_GRAND_FATHER_ARB,
@@ -199,6 +229,106 @@ function convertExternalCitizen(data: ExternalCitizenData) {
   };
 }
 
+// Calculate age from 2023 date format (M/D/YYYY)
+function calculateAgeFrom2023Date(birthDate: string): number {
+  if (!birthDate) return 0;
+  
+  try {
+    // Format: "9/6/2003 0:00:00" -> calculate age
+    const dateStr = birthDate.split(' ')[0]; // "9/6/2003"
+    const dateParts = dateStr.split('/');
+    
+    if (dateParts.length === 3) {
+      const month = parseInt(dateParts[0], 10);
+      const day = parseInt(dateParts[1], 10);
+      const year = parseInt(dateParts[2], 10);
+      
+      const birthDateObj = new Date(year, month - 1, day); // month is 0-indexed
+      const today = new Date();
+      
+      if (!isNaN(birthDateObj.getTime())) {
+        let age = today.getFullYear() - birthDateObj.getFullYear();
+        const monthDiff = today.getMonth() - birthDateObj.getMonth();
+        
+        // If birthday hasn't occurred this year yet, subtract one year
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDateObj.getDate())) {
+          age--;
+        }
+        
+        return age;
+      }
+    }
+  } catch (error) {
+    // If calculation fails, return 0
+  }
+  
+  return 0;
+}
+
+// Convert 2023 API data to internal format
+function convertExternalCitizen2023(data: ExternalCitizenData2023) {
+  // Parse birth date from "9/6/2003 0:00:00" format
+  let dateOnly = null;
+  let dobISO = null;
+  
+  if (data.BDATE) {
+    try {
+      // Format: "9/6/2003 0:00:00" -> "2003-06-09"
+      // Note: Format is M/D/YYYY (month/day/year)
+      const dateStr = data.BDATE.split(' ')[0]; // "9/6/2003"
+      const dateParts = dateStr.split('/');
+      if (dateParts.length === 3) {
+        const month = parseInt(dateParts[0], 10);
+        const day = parseInt(dateParts[1], 10);
+        const year = parseInt(dateParts[2], 10);
+        
+        // Format as YYYY-MM-DD
+        dateOnly = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        
+        // Convert to ISO (month is 0-indexed in JS Date)
+        const dateObj = new Date(year, month - 1, day);
+        if (!isNaN(dateObj.getTime())) {
+          dobISO = dateObj.toISOString();
+        }
+      }
+    } catch (error) {
+      // Silently handle date conversion errors
+    }
+  }
+  
+  // Calculate age from birth date instead of using API value
+  const calculatedAge = calculateAgeFrom2023Date(data.BDATE);
+  
+  return {
+    id: data.ID,
+    nationalId: data.ID.toString(),
+    registryYear: 2023, // Mark as 2023 registry
+    firstName: data.FNAME,
+    fatherName: data.SNAME,
+    grandfatherName: data.TNAME,
+    lastName: data.LNAME,
+    fullName: data.FULL_NAME,
+    gender: data.SEX === "ذكر" ? "male" : "female",
+    genderText: data.SEX,
+    dob: dobISO,
+    dobText: dateOnly,
+    age: calculatedAge, // Use calculated age instead of data.AGE
+    socialStatus: data.SOCIALST,
+    socialStatusCode: data.SOCIAL_STATUS,
+    fatherId: data.F_ID,
+    motherId: data.M_ID?.toString(),
+    region: data.REGION,
+    city: data.CITY,
+    motherIdNumber: data.MO_ID?.toString(),
+    address: null,
+    motherName: null,
+    isDead: false, // 2023 registry doesn't have death information
+    deathStatus: "حي", // Always alive in 2023 registry
+    deathDate: null,
+    deathDateText: null,
+  };
+}
+
 export function useGetCitizens() {
   return useQuery({
     queryKey: [api.citizens.list.path],
@@ -213,6 +343,7 @@ export function useSearchCitizens(params?: Record<string, any>) {
   const hasNationalId = params?.nationalId && String(params.nationalId).trim().length > 0;
   const hasFirstName = params?.firstName && String(params.firstName).trim().length > 0;
   const hasLastName = params?.lastName && String(params.lastName).trim().length > 0;
+  const registryYear = params?.registryYear || 2019; // Default to 2019
   
   // For name search, at least firstName and lastName are required
   const isNameSearchValid = hasFirstName && hasLastName;
@@ -223,10 +354,16 @@ export function useSearchCitizens(params?: Record<string, any>) {
     queryFn: async () => {
       if (!isEnabled) return { citizens: [], message: "", count: 0 };
 
+      // Use 2023 API if registryYear is 2023
+      if (registryYear === 2023) {
+        return await searchCitizens2023(params, hasNationalId, hasFirstName, hasLastName);
+      }
+
+      // Otherwise use 2019 API
       let response: ExternalApiResponse;
 
       if (hasNationalId) {
-        // Search by ID
+        // Search by ID - 2019
         try {
           const id = String(params.nationalId).trim();
           const apiResponse = await axios.get<ExternalApiResponse>(
@@ -327,7 +464,7 @@ export function useSearchCitizens(params?: Record<string, any>) {
             throw new Error("يجب إدخال الاسم الأول واسم العائلة على الأقل");
           }
           
-          // Build URL with query parameters manually to ensure proper encoding
+          // Build URL with query parameters manually to ensure proper encoding - 2019
           const url = new URL(`${EXTERNAL_API_BASE_URL}/Users/by-name2019`);
           Object.entries(queryParams).forEach(([key, value]) => {
             if (value && value.trim().length > 0) {
@@ -422,6 +559,162 @@ export function useSearchCitizens(params?: Record<string, any>) {
     },
     enabled: !!isEnabled,
   });
+}
+
+// Search citizens in 2023 registry
+async function searchCitizens2023(
+  params: Record<string, any>,
+  hasNationalId: boolean,
+  hasFirstName: boolean,
+  hasLastName: boolean
+): Promise<{ citizens: any[]; message: string; count: number }> {
+  try {
+    if (hasNationalId) {
+      // Search by ID - 2023
+      const id = String(params.nationalId).trim();
+      const apiResponse = await axios.get<ExternalApiResponse2023>(
+        `${EXTERNAL_API_BASE_URL}/Users/by-id/${id}`
+      );
+      const response = apiResponse.data;
+      
+      if (!response.Success) {
+        return { citizens: [], message: response.Message || "فشل البحث", count: 0 };
+      }
+      
+      if (!response.Data) {
+        return { citizens: [], message: response.Message || "لا توجد نتائج", count: 0 };
+      }
+      
+      // Convert single object to array
+      const data = Array.isArray(response.Data) ? response.Data : [response.Data];
+      const citizens = data.map(convertExternalCitizen2023);
+      
+      // Log search action
+      try {
+        await apiClient.post(api.logs.create.path, {
+          action: "SEARCH",
+          details: `Search by id (2023): ${JSON.stringify({ nationalId: id })}`
+        });
+      } catch (logError) {
+        // Silently fail logging
+      }
+      
+      return {
+        citizens,
+        message: response.Message || "",
+        count: citizens.length
+      };
+    } else {
+      // Search by name - 2023
+      // API 2023 expects firstName and lastName (not FNAME, LNAME) based on error message
+      const queryParams: Record<string, string> = {};
+      
+      if (hasFirstName) {
+        queryParams.firstName = String(params.firstName).trim();
+      }
+      if (hasLastName) {
+        queryParams.lastName = String(params.lastName).trim();
+      }
+      if (params?.fatherName) {
+        const original = String(params.fatherName).trim();
+        if (original.length > 0) {
+          queryParams.fatherName = original;
+        }
+      }
+      if (params?.grandfatherName) {
+        const original = String(params.grandfatherName).trim();
+        if (original.length > 0) {
+          queryParams.grandfatherName = original;
+        }
+      }
+      
+      // Validate that we have at least firstName and lastName
+      if (!queryParams.firstName || !queryParams.lastName) {
+        throw new Error("يجب إدخال الاسم الأول واسم العائلة على الأقل");
+      }
+      
+      // Build URL with query parameters - API 2023 uses GET method
+      const url = new URL(`${EXTERNAL_API_BASE_URL}/Users/by-name`);
+      Object.entries(queryParams).forEach(([key, value]) => {
+        if (value && value.trim().length > 0) {
+          url.searchParams.append(key, value);
+        }
+      });
+      
+      const apiResponse = await axios.get<ExternalApiResponse2023>(url.toString(), {
+        timeout: 30000,
+      });
+      const response = apiResponse.data;
+      
+      if (!response.Success) {
+        throw new Error(response.Message || "فشل البحث");
+      }
+      
+      if (!response.Data) {
+        return { citizens: [], message: response.Message || "لا توجد نتائج", count: 0 };
+      }
+      
+      // Data is always an array for name search
+      const dataArray = Array.isArray(response.Data) ? response.Data : [response.Data];
+      
+      if (dataArray.length === 0) {
+        return { citizens: [], message: response.Message || "لا توجد نتائج", count: 0 };
+      }
+      
+      // Convert data
+      const citizens = dataArray
+        .map((item) => {
+          try {
+            return convertExternalCitizen2023(item);
+          } catch (error) {
+            return null;
+          }
+        })
+        .filter((citizen) => citizen !== null) as any[];
+      
+      // Log search action
+      try {
+        const searchParams: Record<string, string> = {};
+        if (hasFirstName) searchParams.firstName = String(params.firstName).trim();
+        if (hasLastName) searchParams.lastName = String(params.lastName).trim();
+        if (params?.grandfatherName && String(params.grandfatherName).trim().length > 0) {
+          searchParams.grandfatherName = String(params.grandfatherName).trim();
+        }
+        if (params?.fatherName && String(params.fatherName).trim().length > 0) {
+          searchParams.fatherName = String(params.fatherName).trim();
+        }
+        
+        await apiClient.post(api.logs.create.path, {
+          action: "SEARCH",
+          details: `Search by name (2023): ${JSON.stringify(searchParams)}`
+        });
+      } catch (logError) {
+        // Silently fail logging
+      }
+      
+      return {
+        citizens,
+        message: response.Message || "",
+        count: citizens.length
+      };
+    }
+  } catch (error: any) {
+    let errorMessage = "حدث خطأ أثناء البحث";
+    
+    if (error?.response?.data) {
+      if (error.response.data.Message) {
+        errorMessage = error.response.data.Message;
+      } else if (error.response.data.message) {
+        errorMessage = error.response.data.message;
+      } else if (typeof error.response.data === 'string') {
+        errorMessage = error.response.data;
+      }
+    } else if (error?.message) {
+      errorMessage = error.message;
+    }
+    
+    throw new Error(errorMessage);
+  }
 }
 
 export function useCreateCitizen() {

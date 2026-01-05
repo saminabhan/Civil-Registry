@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
+  const [registryYear, setRegistryYear] = useState<2019 | 2023>(2019);
   const [searchParams, setSearchParams] = useState<any>({});
   const [triggerSearch, setTriggerSearch] = useState(false);
   const [searchByNationalId, setSearchByNationalId] = useState(false);
@@ -30,6 +31,14 @@ export default function Dashboard() {
       });
     }
   }, [error, triggerSearch, toast]);
+
+  // Clear phone data when registry year changes
+  useEffect(() => {
+    setPhoneData({});
+    setLoadingPhones({});
+    setCurrentSearchNationalId(null);
+    setTriggerSearch(false);
+  }, [registryYear]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +77,9 @@ export default function Dashboard() {
       setSearchByNationalId(false);
     }
 
+    // Add registry year to params
+    params.registryYear = registryYear;
+    
     setSearchParams(params);
     setTriggerSearch(true);
   };
@@ -92,21 +104,24 @@ export default function Dashboard() {
     if (triggerSearch && searchByNationalId && results.length > 0 && currentSearchNationalId) {
       const citizen = results[0];
       // Always fetch phone data for the current search
-      // Clear existing phone data first to show loading state
+      // Use a unique key based on nationalId + triggerSearch to force re-fetch on every search
       if (citizen.nationalId === currentSearchNationalId) {
-        // Remove from phoneData to force re-fetch
+        // Always clear and fetch - don't check if already exists
+        // This ensures fresh data on every search
         setPhoneData(prev => {
           const { [citizen.nationalId]: _, ...rest } = prev;
           return rest;
         });
-        // Fetch phone data (will always fetch, even if we had cached data)
-        if (!loadingPhones[citizen.nationalId]) {
-          handleFetchPhoneData(citizen.nationalId);
-        }
+        setLoadingPhones(prev => {
+          const { [citizen.nationalId]: _, ...rest } = prev;
+          return rest;
+        });
+        // Fetch phone data immediately
+        handleFetchPhoneData(citizen.nationalId);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [triggerSearch, searchByNationalId, currentSearchNationalId, results.length]);
+  }, [triggerSearch, currentSearchNationalId]);
 
   return (
     <div className="space-y-8" dir="rtl">
@@ -118,6 +133,35 @@ export default function Dashboard() {
       <div className="bg-white rounded-2xl shadow-sm border border-border overflow-hidden">
         <div className="p-8 bg-muted/10">
           <form onSubmit={handleSearch} className="space-y-6">
+            {/* Registry Year Selection */}
+            <div className="flex items-center gap-4 pb-4 border-b border-border/50">
+              <label className="text-sm font-medium text-foreground whitespace-nowrap">السجل:</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRegistryYear(2019)}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    registryYear === 2019
+                      ? 'bg-primary text-primary-foreground shadow-md'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  2019
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRegistryYear(2023)}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    registryYear === 2023
+                      ? 'bg-primary text-primary-foreground shadow-md'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  2023
+                </button>
+              </div>
+            </div>
+            
             <div className="space-y-6">
               {/* رقم الهوية في الأعلى */}
               <div className="max-w-md">
@@ -210,13 +254,16 @@ export default function Dashboard() {
                           <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">
                             {citizen.genderText || (citizen.gender === 'male' ? 'ذكر' : 'أنثى')}
                           </span>
-                          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                            citizen.isDead 
-                              ? 'bg-red-100 text-red-700' 
-                              : 'bg-green-100 text-green-700'
-                          }`}>
-                            {citizen.deathStatus || (citizen.isDead ? 'متوفي' : 'حي')}
-                          </span>
+                          {/* Only show death status for 2019 registry */}
+                          {citizen.registryYear === 2019 && (
+                            <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                              citizen.isDead 
+                                ? 'bg-red-100 text-red-700' 
+                                : 'bg-green-100 text-green-700'
+                            }`}>
+                              {citizen.deathStatus || (citizen.isDead ? 'متوفي' : 'حي')}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -227,7 +274,7 @@ export default function Dashboard() {
                         {citizen.age !== undefined && citizen.age !== null && (
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">
-                              {citizen.isDead ? 'العمر عند الوفاة' : 'العمر'}
+                              {citizen.registryYear === 2019 && citizen.isDead ? 'العمر عند الوفاة' : 'العمر'}
                             </p>
                             <p className="font-medium text-sm">{citizen.age} سنة</p>
                           </div>
@@ -245,7 +292,8 @@ export default function Dashboard() {
                             <p className="font-medium text-sm text-primary">{phoneData[citizen.nationalId].mobile}</p>
                           </div>
                         )}
-                        {citizen.isDead && citizen.deathDateText && (
+                        {/* Only show death date for 2019 registry */}
+                        {citizen.registryYear === 2019 && citizen.isDead && citizen.deathDateText && (
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">تاريخ الوفاة</p>
                             <p className="font-medium text-sm text-red-600">{citizen.deathDateText}</p>
