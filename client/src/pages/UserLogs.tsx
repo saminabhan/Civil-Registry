@@ -55,27 +55,27 @@ export default function UserLogs() {
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-border dark:border-slate-700 shadow-sm overflow-hidden">
           <table className="w-full text-right">
-            <thead className="bg-muted/30 border-b border-border">
+            <thead className="bg-muted/30 dark:bg-slate-700/30 border-b border-border dark:border-slate-700">
               <tr>
                 <th className="px-6 py-4 font-semibold text-sm text-foreground">الإجراء</th>
                 <th className="px-6 py-4 font-semibold text-sm text-foreground">التفاصيل</th>
                 <th className="px-6 py-4 font-semibold text-sm text-foreground">التوقيت</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-border dark:divide-slate-700">
               {logs?.map((log: any) => (
-                <tr key={log.id} className="hover:bg-muted/10 transition-colors">
+                <tr key={log.id} className="hover:bg-muted/10 dark:hover:bg-slate-700/10 transition-colors">
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
-                      log.action === 'LOGIN' ? 'bg-green-100 text-green-700' :
-                      log.action === 'LOGOUT' ? 'bg-red-100 text-red-700' :
-                      log.action === 'SEARCH' ? 'bg-blue-100 text-blue-700' :
-                      log.action === 'NAVIGATE' ? 'bg-gray-100 text-gray-700' :
-                      log.action === 'CREATE_USER' ? 'bg-purple-100 text-purple-700' :
-                      log.action === 'UPDATE_USER_STATUS' ? 'bg-orange-100 text-orange-700' :
-                      'bg-slate-100 text-slate-700'
+                      log.action === 'LOGIN' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
+                      log.action === 'LOGOUT' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
+                      log.action === 'SEARCH' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
+                      log.action === 'NAVIGATE' ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300' :
+                      log.action === 'CREATE_USER' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' :
+                      log.action === 'UPDATE_USER_STATUS' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300' :
+                      'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
                     }`}>
                       {log.action}
                     </span>
@@ -89,7 +89,7 @@ export default function UserLogs() {
                               const jsonStr = log.details.replace("Searched citizens:", "").trim();
                               const parsedData = JSON.parse(jsonStr);
                               return (
-                                <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                                <div className="bg-muted/50 dark:bg-slate-700/50 rounded-lg p-3 space-y-2">
                                   {parsedData.nationalId && (
                                     <div className="flex items-center gap-2">
                                       <span className="text-xs font-medium text-muted-foreground">الرقم الوطني:</span>

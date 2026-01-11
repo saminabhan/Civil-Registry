@@ -36,9 +36,9 @@ export default function Logs() {
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-border dark:border-slate-700 shadow-sm overflow-hidden">
           <table className="w-full text-right">
-            <thead className="bg-muted/30 border-b border-border">
+            <thead className="bg-muted/30 dark:bg-slate-700/30 border-b border-border dark:border-slate-700">
               <tr>
                 <th className="px-6 py-4 font-semibold text-sm text-foreground">المستخدم</th>
                 <th className="px-6 py-4 font-semibold text-sm text-foreground">الصلاحية</th>
@@ -47,9 +47,9 @@ export default function Logs() {
                 <th className="px-6 py-4 font-semibold text-sm text-foreground">الإجراءات</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-border dark:divide-slate-700">
               {users?.map((user: any) => (
-                <tr key={user.id} className="hover:bg-muted/10 transition-colors">
+                <tr key={user.id} className="hover:bg-muted/10 dark:hover:bg-slate-700/10 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
@@ -63,12 +63,12 @@ export default function Logs() {
                   </td>
                   <td className="px-6 py-4">
                     {user.isAdmin ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
                         <Shield className="w-3 h-3" />
                         مسؤول
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
                         <User className="w-3 h-3" />
                         مستخدم
                       </span>
@@ -84,8 +84,8 @@ export default function Logs() {
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                       user.isActive 
-                        ? "bg-green-100 text-green-700" 
-                        : "bg-red-100 text-red-700"
+                        ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300" 
+                        : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
                     }`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${user.isActive ? "bg-green-500" : "bg-red-500"}`} />
                       {user.isActive ? "نشط" : "معطل"}
@@ -184,7 +184,7 @@ function UserRecentSearchesDialog({
                         
                         {/* Content - alternating sides */}
                         <div className={`flex-1 ${isRight ? 'pr-8' : 'pl-8'}`} style={isRight ? { marginRight: 'calc(50% + 0.5rem)' } : { marginLeft: 'calc(50% + 0.5rem)' }}>
-                          <div className="bg-card border border-border rounded-lg p-4 hover:bg-muted/10 transition-colors" dir="rtl">
+                          <div className="bg-card dark:bg-slate-800 border border-border dark:border-slate-700 rounded-lg p-4 hover:bg-muted/10 dark:hover:bg-slate-700/10 transition-colors" dir="rtl">
                             <div className="flex items-center justify-between mb-3">
                               <div className="flex items-center gap-2">
                                 <Search className="w-4 h-4 text-blue-500" />
@@ -196,7 +196,7 @@ function UserRecentSearchesDialog({
                             </div>
                             
                             {parsedData ? (
-                              <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                              <div className="bg-muted/50 dark:bg-slate-700/50 rounded-lg p-3 space-y-2">
                                 {parsedData.nationalId && (
                                   <div className="flex items-center gap-2">
                                     <span className="text-xs font-medium text-muted-foreground min-w-[100px]">الرقم الوطني:</span>

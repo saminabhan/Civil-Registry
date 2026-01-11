@@ -43,7 +43,7 @@ export function Sidebar() {
       <div className="md:hidden fixed top-4 right-4 z-50">
         <button 
           onClick={() => setIsOpen(!isOpen)}
-          className="p-2 bg-white rounded-lg shadow-md border text-primary"
+          className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-md border border-border dark:border-slate-700 text-primary"
         >
           {isOpen ? <X /> : <Menu />}
         </button>
@@ -65,7 +65,7 @@ export function Sidebar() {
       {/* Sidebar Content */}
       <motion.aside 
         className={cn(
-          "fixed md:sticky top-0 right-0 h-screen w-72 bg-white/90 backdrop-blur-xl border-l border-border z-40 flex flex-col shadow-2xl md:shadow-none",
+          "fixed md:sticky top-0 right-0 h-screen w-72 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-l border-border dark:border-slate-700 z-40 flex flex-col shadow-2xl md:shadow-none",
           "transform transition-transform duration-300 ease-in-out md:translate-x-0",
           isOpen ? "translate-x-0" : "translate-x-full" // RTL: translate-x-full hides it to the right
         )}
@@ -106,7 +106,7 @@ export function Sidebar() {
           )}
         </nav>
 
-        <div className="p-4 border-t border-border/50 bg-muted/30">
+        <div className="p-4 border-t border-border/50 dark:border-slate-700/50 bg-muted/30 dark:bg-slate-800/30">
           <div className="flex items-center gap-3 px-4 py-3 mb-2">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
               {((user as any)?.name || user?.username)?.charAt(0).toUpperCase()}

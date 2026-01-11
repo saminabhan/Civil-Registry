@@ -136,11 +136,11 @@ export default function Dashboard() {
         <p className="text-muted-foreground mt-2">ابحث في قاعدة البيانات باستخدام الاسم أو رقم الهوية</p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-border overflow-hidden">
-        <div className="p-8 bg-muted/10">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-border dark:border-slate-700 overflow-hidden">
+        <div className="p-8 bg-muted/10 dark:bg-slate-700/10">
           <form onSubmit={handleSearch} className="space-y-6">
             {/* Registry Year Selection */}
-            <div className="flex items-center gap-4 pb-4 border-b border-border/50">
+              <div className="flex items-center gap-4 pb-4 border-b border-border/50 dark:border-slate-700/50">
               <label className="text-sm font-medium text-foreground whitespace-nowrap">السجل:</label>
               <div className="flex gap-2">
                 <button
@@ -220,14 +220,14 @@ export default function Dashboard() {
             </div>
           </motion.div>
         ) : triggerSearch && results.length === 0 ? (
-          <div className="text-center py-20 bg-muted/30 rounded-2xl border border-dashed border-border">
+          <div className="text-center py-20 bg-muted/30 dark:bg-slate-800/30 rounded-2xl border border-dashed border-border dark:border-slate-700">
             <Info className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-bold text-foreground">لا توجد نتائج</h3>
             <p className="text-muted-foreground">{resultMessage || "لم يتم العثور على سجلات مطابقة لمعايير البحث"}</p>
           </div>
         ) : triggerSearch && results.length > 0 ? (
           <>
-            <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 flex items-center justify-between">
+            <div className="bg-primary/5 dark:bg-primary/10 border border-primary/20 dark:border-primary/30 rounded-xl px-4 py-3 flex items-center justify-between">
               <p className="text-sm font-medium text-foreground">
                 {resultMessage || `تم العثور على ${resultCount} مواطن`}
               </p>
@@ -241,7 +241,7 @@ export default function Dashboard() {
                   key={citizen.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-white p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow"
+                  className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-border dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow"
                 >
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Main Info - Left Column */}
@@ -257,15 +257,15 @@ export default function Dashboard() {
                           <span className="text-xs font-medium bg-muted px-2.5 py-1 rounded-full text-foreground">
                             {citizen.nationalId}
                           </span>
-                          <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">
+                          <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium">
                             {citizen.genderText || (citizen.gender === 'male' ? 'ذكر' : 'أنثى')}
                           </span>
                           {/* Only show death status for 2019 registry */}
                           {citizen.registryYear === 2019 && (
                             <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                               citizen.isDead 
-                                ? 'bg-red-100 text-red-700' 
-                                : 'bg-green-100 text-green-700'
+                                ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' 
+                                : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
                             }`}>
                               {citizen.deathStatus || (citizen.isDead ? 'متوفي' : 'حي')}
                             </span>
@@ -330,7 +330,7 @@ export default function Dashboard() {
                       )}
                       
                       {/* Detailed Address Section */}
-                      <div className="pt-2 border-t border-border/50">
+                      <div className="pt-2 border-t border-border/50 dark:border-slate-700/50">
                         {phoneData[citizen.nationalId] !== undefined ? (
                           <>
                             {phoneData[citizen.nationalId].governorate || 

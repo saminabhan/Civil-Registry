@@ -72,9 +72,9 @@ export default function Users() {
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-border dark:border-slate-700 shadow-sm overflow-hidden">
           <table className="w-full text-right">
-            <thead className="bg-muted/30 border-b border-border">
+            <thead className="bg-muted/30 dark:bg-slate-700/30 border-b border-border dark:border-slate-700">
               <tr>
                 <th className="px-6 py-4 font-semibold text-sm text-foreground">المستخدم</th>
                 <th className="px-6 py-4 font-semibold text-sm text-foreground">الصلاحية</th>
@@ -83,9 +83,9 @@ export default function Users() {
                 <th className="px-6 py-4 font-semibold text-sm text-foreground">الإجراءات</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-border dark:divide-slate-700">
               {users?.map((user: User) => (
-                <tr key={user.id} className="hover:bg-muted/10 transition-colors">
+                <tr key={user.id} className="hover:bg-muted/10 dark:hover:bg-slate-700/10 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
@@ -96,12 +96,12 @@ export default function Users() {
                   </td>
                   <td className="px-6 py-4">
                     {user.isAdmin ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
                         <Shield className="w-3 h-3" />
                         مسؤول
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
                         <UserCheck className="w-3 h-3" />
                         مستخدم
                       </span>
@@ -113,8 +113,8 @@ export default function Users() {
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                       user.isActive 
-                        ? "bg-green-100 text-green-700" 
-                        : "bg-red-100 text-red-700"
+                        ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300" 
+                        : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
                     }`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${user.isActive ? "bg-green-500" : "bg-red-500"}`} />
                       {user.isActive ? "نشط" : "معطل"}
@@ -203,7 +203,7 @@ function CreateUserDialog({ open, onOpenChange }: { open: boolean, onOpenChange:
             <label className="text-sm font-medium">اسم المستخدم</label>
             <input
               {...form.register("username")}
-              className="w-full px-3 py-2 rounded-lg border border-border focus:ring-2 focus:ring-primary/20 outline-none"
+              className="w-full px-3 py-2 rounded-lg border border-border dark:border-slate-600 bg-background dark:bg-slate-700/50 focus:ring-2 focus:ring-primary/20 outline-none"
             />
             {form.formState.errors.username && (
               <p className="text-xs text-destructive">{form.formState.errors.username.message}</p>
@@ -215,7 +215,7 @@ function CreateUserDialog({ open, onOpenChange }: { open: boolean, onOpenChange:
             <input
               {...form.register("password")}
               type="password"
-              className="w-full px-3 py-2 rounded-lg border border-border focus:ring-2 focus:ring-primary/20 outline-none"
+              className="w-full px-3 py-2 rounded-lg border border-border dark:border-slate-600 bg-background dark:bg-slate-700/50 focus:ring-2 focus:ring-primary/20 outline-none"
             />
             {form.formState.errors.password && (
               <p className="text-xs text-destructive">{form.formState.errors.password.message}</p>

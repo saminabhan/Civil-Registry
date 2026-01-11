@@ -114,8 +114,8 @@ export default function Settings() {
 
       <div className="space-y-8">
         {/* Update Profile Section */}
-        <div className="bg-white rounded-2xl shadow-sm border border-border overflow-hidden">
-          <div className="p-8 bg-muted/10">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-border dark:border-slate-700 overflow-hidden">
+          <div className="p-8 bg-muted/10 dark:bg-slate-700/10">
             <h2 className="text-xl font-bold text-foreground mb-6">تحديث البيانات الشخصية</h2>
             <form onSubmit={handleUpdateProfile} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -151,8 +151,8 @@ export default function Settings() {
         </div>
 
         {/* Update Password Section */}
-        <div className="bg-white rounded-2xl shadow-sm border border-border overflow-hidden">
-          <div className="p-8 bg-muted/10">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-border dark:border-slate-700 overflow-hidden">
+          <div className="p-8 bg-muted/10 dark:bg-slate-700/10">
             <h2 className="text-xl font-bold text-foreground mb-6">تغيير كلمة المرور</h2>
             <form onSubmit={handleUpdatePassword} className="space-y-4">
               <div className="space-y-4">
@@ -217,7 +217,7 @@ function InputGroup({
         name={name}
         type={type}
         defaultValue={defaultValue}
-        className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+        className="w-full px-4 py-3 rounded-xl bg-background dark:bg-slate-700/50 border border-border dark:border-slate-600 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
         placeholder={placeholder || `أدخل ${label}`}
       />
     </div>

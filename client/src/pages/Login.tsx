@@ -45,8 +45,8 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-background to-muted p-4" dir="rtl">
-      <div className="w-full max-w-5xl h-[600px] flex rounded-3xl overflow-hidden shadow-2xl bg-card border border-border/50">
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-background to-muted dark:from-slate-900 dark:to-slate-800 p-4" dir="rtl">
+      <div className="w-full max-w-5xl h-[600px] flex rounded-3xl overflow-hidden shadow-2xl bg-card dark:bg-slate-800 border border-border/50 dark:border-slate-700">
         
         {/* Right Side - Form */}
         <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center relative z-10">
@@ -118,7 +118,7 @@ export default function Login() {
         </div>
 
         {/* Left Side - Visual */}
-        <div className="hidden md:flex w-1/2 bg-slate-900 relative items-center justify-center overflow-hidden">
+        <div className="hidden md:flex w-1/2 bg-slate-900 dark:bg-slate-950 relative items-center justify-center overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/80 to-purple-600/80 mix-blend-overlay" />
           
           {/* Unsplash Background Image */}
