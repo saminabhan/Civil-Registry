@@ -113,7 +113,7 @@ export default function Login() {
           </form>
           
           <div className="mt-8 text-center text-sm text-muted-foreground">
-            نظام السجل المدني © 2025
+            نظام السجل المدني © 2026
           </div>
         </div>
 
