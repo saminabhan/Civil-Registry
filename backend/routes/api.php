@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\CitizenController;
 use App\Http\Controllers\Api\ExternalCitizenProxyController;
+use App\Http\Controllers\Api\PhoneApiProxyController;
 
 // Test endpoint to check if API is working (no database required)
 Route::get('/test', function () {
@@ -110,7 +111,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/external-proxy/citizen/by-name2019', [ExternalCitizenProxyController::class, 'byName2019']);
     Route::get('/external-proxy/citizen/by-id/{id}', [ExternalCitizenProxyController::class, 'byId']);
     Route::get('/external-proxy/citizen/by-name', [ExternalCitizenProxyController::class, 'byName']);
-    
+
+    // Phone API proxy (e-gaza.com) – login + fetch-by-id
+    Route::post('/phone-proxy/login', [PhoneApiProxyController::class, 'login']);
+    Route::get('/phone-proxy/fetch-by-id/{id}', [PhoneApiProxyController::class, 'fetchById']);
+
     Route::get('/logs', [AuditLogController::class, 'index']);
     Route::get('/logs/users', [AuditLogController::class, 'getUsersWithLogCounts']);
     Route::get('/logs/user/{userId}', [AuditLogController::class, 'getUserLogs']);
