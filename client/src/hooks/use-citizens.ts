@@ -4,10 +4,7 @@ import axios from "axios";
 import apiClient from "@/lib/axios";
 import { getApiBaseUrl } from "@/lib/api-config";
 
-// Use proxy to avoid CORS - backend forwards to api.eservice.aiocp.org
-function getExternalApiUrl(path: string) {
-  return `${getApiBaseUrl()}/external-proxy/citizen${path}`;
-}
+const EXTERNAL_API_BASE_URL = "https://api.eservice.aiocp.org/api";
 
 // Normalize Arabic characters - convert all forms of Alef (أ، إ، آ، ا) to ا
 function normalizeArabic(text: string | null | undefined): string {
@@ -369,8 +366,8 @@ export function useSearchCitizens(params?: Record<string, any>) {
         // Search by ID - 2019
         try {
           const id = String(params.nationalId).trim();
-          const apiResponse = await apiClient.get<ExternalApiResponse>(
-            getExternalApiUrl(`/by-id2019/${id}`)
+          const apiResponse = await axios.get<ExternalApiResponse>(
+            `${EXTERNAL_API_BASE_URL}/Citizen/by-id2019/${id}`
           );
           response = apiResponse.data;
           
@@ -467,18 +464,15 @@ export function useSearchCitizens(params?: Record<string, any>) {
             throw new Error("يجب إدخال الاسم الأول واسم العائلة على الأقل");
           }
           
-          // Build URL with query parameters - use proxy to avoid CORS
-          const query = new URLSearchParams();
+          const url = new URL(`${EXTERNAL_API_BASE_URL}/Citizen/by-name2019`);
           Object.entries(queryParams).forEach(([key, value]) => {
             if (value && value.trim().length > 0) {
-              query.append(key, value);
+              url.searchParams.append(key, value);
             }
           });
-          const queryStr = query.toString();
-          const url = getExternalApiUrl("/by-name2019") + (queryStr ? `?${queryStr}` : "");
 
-          const apiResponse = await apiClient.get<ExternalApiResponse>(url, {
-            timeout: 30000, // 30 seconds timeout
+          const apiResponse = await axios.get<ExternalApiResponse>(url.toString(), {
+            timeout: 30000,
           });
           response = apiResponse.data;
           
@@ -577,8 +571,8 @@ async function searchCitizens2023(
     if (hasNationalId) {
       // Search by ID - 2023
       const id = String(params.nationalId).trim();
-      const apiResponse = await apiClient.get<ExternalApiResponse2023>(
-        getExternalApiUrl(`/by-id/${id}`)
+      const apiResponse = await axios.get<ExternalApiResponse2023>(
+        `${EXTERNAL_API_BASE_URL}/Citizen/by-id/${id}`
       );
       const response = apiResponse.data;
       
@@ -639,16 +633,14 @@ async function searchCitizens2023(
       }
       
       // Build URL with query parameters - API 2023 uses GET method
-      const query = new URLSearchParams();
+      const url = new URL(`${EXTERNAL_API_BASE_URL}/Citizen/by-name`);
       Object.entries(queryParams).forEach(([key, value]) => {
         if (value && value.trim().length > 0) {
-          query.append(key, value);
+          url.searchParams.append(key, value);
         }
       });
-      const queryStr = query.toString();
-      const url = getExternalApiUrl("/by-name") + (queryStr ? `?${queryStr}` : "");
 
-      const apiResponse = await apiClient.get<ExternalApiResponse2023>(url, {
+      const apiResponse = await axios.get<ExternalApiResponse2023>(url.toString(), {
         timeout: 30000,
       });
       const response = apiResponse.data;
