@@ -464,16 +464,15 @@ export function useSearchCitizens(params?: Record<string, any>) {
             throw new Error("يجب إدخال الاسم الأول واسم العائلة على الأقل");
           }
           
-          // Build URL with query parameters manually to ensure proper encoding - 2019
           const url = new URL(`${EXTERNAL_API_BASE_URL}/Citizen/by-name2019`);
           Object.entries(queryParams).forEach(([key, value]) => {
             if (value && value.trim().length > 0) {
               url.searchParams.append(key, value);
             }
           });
-          
+
           const apiResponse = await axios.get<ExternalApiResponse>(url.toString(), {
-            timeout: 30000, // 30 seconds timeout
+            timeout: 30000,
           });
           response = apiResponse.data;
           
@@ -640,7 +639,7 @@ async function searchCitizens2023(
           url.searchParams.append(key, value);
         }
       });
-      
+
       const apiResponse = await axios.get<ExternalApiResponse2023>(url.toString(), {
         timeout: 30000,
       });
