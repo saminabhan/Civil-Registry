@@ -1,0 +1,1 @@
+[29-Dec-2025 13:19:50 UTC] PHP Fatal error:  Cannot declare class App\Providers\RouteServiceProvider, because the name is already in use in /home/infinet/public_html/Civil-Registry/backend/app/Providers/AppServiceProvider.php on line 8
