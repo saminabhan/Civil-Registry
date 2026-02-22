@@ -3,7 +3,7 @@ name: Auto Upload to Hosting
 on:
   push:
     branches:
-      - main
+      - development
 
 jobs:
   upload:
