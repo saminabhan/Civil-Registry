@@ -8,15 +8,15 @@ use Illuminate\Support\Facades\Http;
 
 /**
  * Proxy for e-gaza.com phone API (CORS + auth).
- * Login and fetch-by-id go through our backend so the browser doesn't hit e-gaza.com directly.
+ * Matches Postman "Gas moi": login (formdata), fetch-by-id (Bearer token).
+ * @see https://e-gaza.com/api — Login POST formdata, Fetch GET Authorization: Bearer
  */
 class PhoneApiProxyController extends Controller
 {
     private const PHONE_API_BASE = 'https://e-gaza.com/api';
 
     /**
-     * POST /api/phone-proxy/login
-     * Forwards to e-gaza.com/api/login, returns token.
+     * POST /api/phone-proxy/login → e-gaza.com/api/login (formdata: username, password)
      */
     public function login(Request $request)
     {
@@ -46,8 +46,8 @@ class PhoneApiProxyController extends Controller
     }
 
     /**
-     * GET /api/phone-proxy/fetch-by-id/{id}
-     * Forwards to e-gaza.com with token from X-Phone-API-Token (Sanctum uses Authorization).
+     * GET /api/phone-proxy/fetch-by-id/{id} → e-gaza.com/api/fetch-by-id/{id}
+     * Token from X-Phone-API-Token (forwarded as Authorization: Bearer).
      */
     public function fetchById(Request $request, string $id)
     {

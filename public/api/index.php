@@ -1,15 +1,89 @@
 <?php
 /**
  * API Proxy - Redirects all API requests to Laravel backend
- * This file is in dist/public/api/ and redirects to ../backend/public/index.php
+ * Phone API (e-gaza.com) is handled HERE to avoid Laravel route/cache issues.
  */
 
-// Enable error reporting for debugging (remove in production)
 error_reporting(E_ALL);
-ini_set('display_errors', 0); // Don't display errors, but log them
+ini_set('display_errors', 0);
 
-// Get the original request URI
 $originalUri = $_SERVER['REQUEST_URI'] ?? '/';
+$requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+
+// ========== Phone API proxy (e-gaza.com) – معالجة هنا بدون Laravel ==========
+const PHONE_API_BASE = 'https://e-gaza.com/api';
+
+// POST /api/phone-proxy/login
+if ($requestMethod === 'POST' && preg_match('#^/api/phone-proxy/login(?:\?|$)#', $originalUri)) {
+    $input = json_decode(file_get_contents('php://input') ?: '{}', true) ?: [];
+    $username = $input['username'] ?? '';
+    $password = $input['password'] ?? '';
+    if ($username === '' && $password === '') {
+        header('Content-Type: application/json');
+        http_response_code(422);
+        echo json_encode(['error' => 'username and password required']);
+        exit;
+    }
+    $ctx = stream_context_create([
+        'http' => [
+            'method' => 'POST',
+            'header' => "Content-type: application/x-www-form-urlencoded\r\n",
+            'content' => http_build_query(['username' => $username, 'password' => $password]),
+            'timeout' => 15,
+        ],
+    ]);
+    $response = @file_get_contents(PHONE_API_BASE . '/login', false, $ctx);
+    $code = 200;
+    if (isset($http_response_header[0]) && preg_match('/ (\d{3}) /', $http_response_header[0], $m)) {
+        $code = (int) $m[1];
+    }
+    header('Content-Type: application/json');
+    http_response_code($code);
+    echo $response !== false ? $response : json_encode(['error' => 'Failed to reach phone API']);
+    exit;
+}
+
+// GET /api/phone-proxy/fetch-by-id/{id}
+if ($requestMethod === 'GET' && preg_match('#^/api/phone-proxy/fetch-by-id/([0-9]+)(?:\?|$)#', $originalUri, $m)) {
+    $id = $m[1];
+    $token = null;
+    if (function_exists('apache_request_headers')) {
+        $h = apache_request_headers();
+        foreach ($h as $k => $v) {
+            if (strtolower($k) === 'x-phone-api-token') {
+                $token = $v;
+                break;
+            }
+        }
+    }
+    if (!$token) {
+        $token = $_SERVER['HTTP_X_PHONE_API_TOKEN'] ?? $_SERVER['REDIRECT_HTTP_X_PHONE_API_TOKEN'] ?? '';
+    }
+    if ($token === '') {
+        header('Content-Type: application/json');
+        http_response_code(401);
+        echo json_encode(['error' => 'X-Phone-API-Token required']);
+        exit;
+    }
+    $ctx = stream_context_create([
+        'http' => [
+            'method' => 'GET',
+            'header' => "Accept: application/json\r\nAuthorization: Bearer " . trim($token) . "\r\n",
+            'timeout' => 15,
+        ],
+    ]);
+    $response = @file_get_contents(PHONE_API_BASE . '/fetch-by-id/' . $id, false, $ctx);
+    $code = 200;
+    if (isset($http_response_header[0]) && preg_match('/ (\d{3}) /', $http_response_header[0], $m)) {
+        $code = (int) $m[1];
+    }
+    header('Content-Type: application/json');
+    http_response_code($code);
+    echo $response !== false ? $response : json_encode(['error' => 'Failed to reach phone API']);
+    exit;
+}
+
+// ========== بقية الطلبات تذهب إلى Laravel ==========
 
 // Log for debugging (remove in production)
 // error_log("API Proxy: Original URI = " . $originalUri);
