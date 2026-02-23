@@ -1,27 +1,39 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { getApiBaseUrl } from "@/lib/api-config";
 
+// الـ API الأصلي (الطلبات تمر عبر البروكسي لتجنب CORS)
 const PHONE_API_URL = "https://e-gaza.com/api";
 const PHONE_API_TOKEN_KEY = "phone_api_token";
 
+// Base URL for phone API proxy (avoids CORS; backend forwards to e-gaza.com)
+function getPhoneProxyUrl(path: string) {
+  return `${getApiBaseUrl()}/phone-proxy${path}`;
+}
+
+function getAppAuthHeaders(): HeadersInit {
+  const token = typeof localStorage !== "undefined" ? localStorage.getItem("token") : null;
+  const headers: HeadersInit = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  return headers;
+}
+
 // Get or set token from localStorage
 export function getPhoneApiToken(): string | null {
-  return localStorage.getItem(PHONE_API_TOKEN_KEY);
+  return typeof localStorage !== "undefined" ? localStorage.getItem(PHONE_API_TOKEN_KEY) : null;
 }
 
 export function setPhoneApiToken(token: string): void {
-  localStorage.setItem(PHONE_API_TOKEN_KEY, token);
+  if (typeof localStorage !== "undefined") localStorage.setItem(PHONE_API_TOKEN_KEY, token);
 }
 
-// Login to phone API
+// Login to phone API via our proxy (e-gaza.com)
 export async function loginToPhoneAPI(username: string, password: string): Promise<string> {
-  const formData = new FormData();
-  formData.append("username", username);
-  formData.append("password", password);
-
-  const response = await fetch(`${PHONE_API_URL}/login`, {
+  const response = await fetch(getPhoneProxyUrl("/login"), {
     method: "POST",
-    body: formData,
+    headers: getAppAuthHeaders(),
+    body: JSON.stringify({ username, password }),
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -29,24 +41,21 @@ export async function loginToPhoneAPI(username: string, password: string): Promi
     throw new Error(`فشل تسجيل الدخول إلى API الهاتف: ${response.status} ${errorText}`);
   }
 
-  let data;
+  let data: any;
+  const text = await response.text();
   try {
-    data = await response.json();
-  } catch (error) {
-    // If response is not JSON, try to get token from response text
-    const text = await response.text();
-    if (text) {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    if (text && text.trim()) {
       setPhoneApiToken(text.trim());
       return text.trim();
     }
     throw new Error("استجابة غير صحيحة من API");
   }
-  
-  // Extract token from response (adjust based on actual response structure)
-  const token = data.token || data.access_token || data.data?.token || data.accessToken;
-  
-  if (!token) {
-    // Log the response for debugging
+
+  const token =
+    data.token ?? data.access_token ?? data.data?.token ?? data.accessToken ?? data.data;
+  if (!token || typeof token !== "string") {
     console.error("Unexpected API response structure:", data);
     throw new Error("لم يتم استلام token من API");
   }
@@ -63,19 +72,16 @@ export interface PhoneApiData {
   governorate: string | null;
 }
 
-// Fetch phone number and location data by national ID
+// Fetch phone number and location data by national ID (via proxy)
 export async function fetchPhoneByNationalId(
-  nationalId: string, 
+  nationalId: string,
   signal?: AbortSignal
 ): Promise<PhoneApiData> {
   let token = getPhoneApiToken();
 
-  // If no token, try to login first
   if (!token) {
-    // You might want to get these from environment variables or config
-    const username = "moi2"; // Default username from Postman
-    const password = "moi1234455123"; // Default password from Postman
-    
+    const username = "moi2";
+    const password = "moi1234455123";
     try {
       token = await loginToPhoneAPI(username, password);
     } catch (error) {
@@ -83,72 +89,47 @@ export async function fetchPhoneByNationalId(
     }
   }
 
-  try {
-    // Create timeout controller (15 seconds timeout)
+  const doFetch = async (authToken: string) => {
     const timeoutController = new AbortController();
     const timeoutId = setTimeout(() => timeoutController.abort(), 15000);
-    
-    // Use provided signal or create a new one, combine with timeout
-    const requestSignal = signal || new AbortController().signal;
-    const combinedController = new AbortController();
-    
-    // Listen to both signals
-    requestSignal.addEventListener('abort', () => combinedController.abort());
-    timeoutController.signal.addEventListener('abort', () => combinedController.abort());
+    const requestSignal = signal ?? new AbortController().signal;
+    const combined = new AbortController();
+    requestSignal.addEventListener("abort", () => combined.abort());
+    timeoutController.signal.addEventListener("abort", () => combined.abort());
 
-    const response = await fetch(`${PHONE_API_URL}/fetch-by-id/${nationalId}`, {
+    const headers: HeadersInit = {
+      ...getAppAuthHeaders(),
+      "X-Phone-API-Token": authToken,
+    };
+    delete (headers as Record<string, string>)["Content-Type"];
+
+    const res = await fetch(getPhoneProxyUrl(`/fetch-by-id/${nationalId}`), {
       method: "GET",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-      },
-      signal: combinedController.signal,
+      headers,
+      credentials: "include",
+      signal: combined.signal,
     });
-    
     clearTimeout(timeoutId);
+    return res;
+  };
+
+  try {
+    let response = await doFetch(token);
 
     if (response.status === 401) {
-      // Token expired, try to login again
-      const username = "moi2";
-      const password = "moi1234455123";
-      token = await loginToPhoneAPI(username, password);
-      
-      // Retry the request with timeout
-      const retryTimeoutController = new AbortController();
-      const retryTimeoutId = setTimeout(() => retryTimeoutController.abort(), 15000);
-      
-      const retryRequestSignal = signal || new AbortController().signal;
-      const retryCombinedController = new AbortController();
-      
-      retryRequestSignal.addEventListener('abort', () => retryCombinedController.abort());
-      retryTimeoutController.signal.addEventListener('abort', () => retryCombinedController.abort());
-      
-      const retryResponse = await fetch(`${PHONE_API_URL}/fetch-by-id/${nationalId}`, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
-        signal: retryCombinedController.signal,
-      });
-      
-      clearTimeout(retryTimeoutId);
-
-      if (!retryResponse.ok) {
-        throw new Error("فشل جلب رقم الهاتف");
-      }
-
-      const retryData = await retryResponse.json();
-      return extractPhoneData(retryData);
+      token = await loginToPhoneAPI("moi2", "moi1234455123");
+      response = await doFetch(token);
     }
 
     if (!response.ok) {
-      throw new Error("فشل جلب البيانات");
+      const errText = await response.text().catch(() => "");
+      throw new Error(errText || "فشل جلب البيانات");
     }
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
     return extractPhoneData(data);
   } catch (error: any) {
-    // Handle abort errors gracefully
-    if (error.name === 'AbortError' || signal?.aborted) {
+    if (error.name === "AbortError" || signal?.aborted) {
       throw new Error("تم إلغاء الطلب");
     }
     console.error("Error fetching phone data:", error);
@@ -156,7 +137,7 @@ export async function fetchPhoneByNationalId(
   }
 }
 
-// Extract phone and location data from API response
+// Extract phone and location data from API response (handles various shapes)
 function extractPhoneData(data: any): PhoneApiData {
   const result: PhoneApiData = {
     mobile: null,
@@ -165,18 +146,25 @@ function extractPhoneData(data: any): PhoneApiData {
     governorate: null,
   };
 
-  // Check if data has the expected structure: { status, code, message, data: { mobile, city, area, governorate } }
-  if (data && typeof data === "object") {
-    // Try direct data object first
-    let dataObj = data.data || data;
-    
-    if (dataObj && typeof dataObj === "object") {
-      if (dataObj.mobile) result.mobile = String(dataObj.mobile).trim() || null;
-      if (dataObj.city) result.city = String(dataObj.city).trim() || null;
-      if (dataObj.area) result.area = String(dataObj.area).trim() || null;
-      if (dataObj.governorate) result.governorate = String(dataObj.governorate).trim() || null;
-    }
-  }
+  if (!data || typeof data !== "object") return result;
+
+  const dataObj = data.data ?? data;
+  if (!dataObj || typeof dataObj !== "object") return result;
+
+  const str = (v: unknown): string | null =>
+    v != null && String(v).trim() !== "" ? String(v).trim() : null;
+
+  result.mobile =
+    str(dataObj.mobile) ??
+    str(dataObj.phone) ??
+    str(dataObj.Phone) ??
+    str(dataObj.Mobile) ??
+    str(dataObj.tel) ??
+    null;
+  result.city = str(dataObj.city) ?? str(dataObj.City) ?? null;
+  result.area = str(dataObj.area) ?? str(dataObj.Area) ?? null;
+  result.governorate =
+    str(dataObj.governorate) ?? str(dataObj.Governorate) ?? str(dataObj.governorate_name) ?? null;
 
   return result;
 }
